@@ -38,9 +38,40 @@ curl -fsSL https://get.docker.com | sh
 
 ## 3. Get the code onto the server
 
+The repository is **private**, so the server needs its own read access. A
+deploy key is the right tool: it grants read-only access to this one repo,
+and it is not tied to your personal GitHub account.
+
+On the VPS, generate a key:
+
 ```bash
-git clone <your-repo> /srv/daar && cd /srv/daar
+ssh-keygen -t ed25519 -C "daar-vps" -f ~/.ssh/id_ed25519 -N ""
 ```
+
+Print the public half:
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+Copy that line, then in GitHub go to
+**daar-website → Settings → Deploy keys → Add deploy key**. Paste it, name it
+`daar-vps`, and leave "Allow write access" **unchecked** — the server only
+ever needs to read.
+
+Then clone over SSH:
+
+```bash
+ssh -T git@github.com   # accept the fingerprint, expect "successfully authenticated"
+```
+
+```bash
+git clone git@github.com:Markkiprono/daar-website.git /srv/daar && cd /srv/daar
+```
+
+> A personal access token in the clone URL also works, but it ends up in
+> `.git/config` in plaintext and carries your whole account's permissions.
+> The deploy key is read-only and scoped to this repo.
 
 ---
 
@@ -153,6 +184,9 @@ gunzip -c backups/daar-YYYY-MM-DD.sql.gz | head -40
 ```bash
 cd /srv/daar && git pull && docker compose up -d --build
 ```
+
+Because the deploy key is read-only, `git pull` works and an accidental
+`git push` from the server cannot rewrite your repository.
 
 Migrations apply automatically. Uploaded photos live on a Docker volume and
 are untouched by rebuilds.
