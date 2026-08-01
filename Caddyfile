@@ -1,0 +1,70 @@
+# Daar — reverse proxy with automatic HTTPS.
+#
+# Caddy obtains and renews Let's Encrypt certificates on its own, so there is
+# no certbot to configure or remember. Both hostnames must already point at
+# this server's IP before it starts, or the challenge fails.
+
+{
+	# Certificate expiry notices.
+	email hello@daarbyizzi.com
+}
+
+# ---------- public site ----------
+daarbyizzi.com, www.daarbyizzi.com {
+	encode zstd gzip
+
+	# Tells the app the original request was HTTPS, which is what decides
+	# whether the admin session cookie gets the Secure flag.
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	log {
+		output file /data/access-public.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}
+
+# ---------- admin ----------
+admin.daarbyizzi.com {
+	encode zstd gzip
+
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# The dashboard should never be framed anywhere.
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Belt and braces — the app sets this too.
+		X-Robots-Tag "noindex, nofollow"
+		-Server
+	}
+
+	# Optional hardening once you know the café's fixed IP: uncomment to
+	# restrict the dashboard to your own network.
+	# @notallowed not remote_ip 197.0.0.0/8
+	# respond @notallowed 403
+
+	log {
+		output file /data/access-admin.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

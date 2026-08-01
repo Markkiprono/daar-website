@@ -1,0 +1,300 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ============================================================
+   DAAR — public site design system
+   Namespaced with --daar-* / .daar-* so it cannot collide with
+   the shadcn theme the admin dashboard uses.
+   Approved in the Phase 0 style board.
+   ============================================================ */
+
+/* Tailwind's `font-sans` resolves through shadcn's --font-sans, which is
+   self-referential and therefore empty — leaving every unstyled paragraph in
+   the browser's serif fallback (Times New Roman). Point the body at the
+   Montserrat variable that next/font sets on <html>. */
+body {
+  font-family: var(--font-body), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+}
+
+/* Register the brand palette with Tailwind.
+   REQUIRED, not cosmetic: an opacity modifier on an arbitrary value —
+   bg-[var(--daar-ink)]/90 — silently produces no CSS at all, because
+   Tailwind cannot know the colour space of an unknown var(). Declaring the
+   colours here makes bg-daar-ink/90, text-daar-cream/85 etc. real. */
+@theme {
+  --color-daar-oxblood: #481819;
+  --color-daar-tan: #d2af8a;
+  --color-daar-ink: #12100f;
+  --color-daar-charcoal: #2a2a2c;
+  --color-daar-slate: #55555a;
+  --color-daar-mist: #b9b7b4;
+  --color-daar-bone: #faf6ef;
+  --color-daar-cream: #f2e4d4;
+  --color-daar-red: #b4262b;
+  --color-daar-ochre: #e8a22b;
+  --color-daar-rule: #e0d7c9;
+  --color-daar-muted: #5c5651;
+}
+
+:root {
+  /* Brand (from daar by izzi.pdf) */
+  --daar-oxblood: #481819;
+  --daar-tan: #d2af8a;
+
+  /* Neutrals, sampled from the photography */
+  --daar-ink: #12100f;
+  --daar-charcoal: #2a2a2c;
+  --daar-slate: #55555a;
+  --daar-mist: #b9b7b4;
+  --daar-bone: #faf6ef;
+  --daar-cream: #f2e4d4;
+
+  /* Accents from the room itself */
+  --daar-red: #b4262b;
+  --daar-ochre: #e8a22b;
+
+  --daar-rule: #e0d7c9;
+  --daar-muted: #5c5651;
+
+  /* The door silhouette */
+  --daar-arch: 999px 999px 2px 2px;
+
+  --daar-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --daar-tex: url("/brand/texture-grunge.jpg");
+}
+
+/* ------------------------------------------------------------
+   Everything below sits in @layer components ON PURPOSE.
+   Unlayered CSS outranks Tailwind's `utilities` layer regardless of
+   specificity, so an unlayered `.daar-tex { position: relative }` silently
+   beat `fixed` on the mobile drawer and it rendered inline instead of
+   covering the screen. Inside `components`, utilities win — which is the
+   precedence you expect when combining these classes with Tailwind.
+   ------------------------------------------------------------ */
+@layer components {
+  /* --- the arch: atmosphere and brand only, never product photos --- */
+  .daar-arch {
+    border-radius: var(--daar-arch);
+    overflow: hidden;
+  }
+
+/* --- grunge texture: an accent on dark surfaces, never behind body copy --- */
+.daar-tex {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+.daar-tex > * {
+  position: relative;
+  z-index: 1;
+}
+.daar-tex-dark::before,
+.daar-tex-ox::before,
+.daar-tex-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--daar-tex);
+  background-size: cover;
+  background-position: center;
+  filter: grayscale(1);
+}
+.daar-tex-dark::before {
+  opacity: 0.26;
+  mix-blend-mode: screen;
+}
+.daar-tex-ox::before {
+  opacity: 0.13;
+  mix-blend-mode: overlay;
+}
+.daar-tex-hero::before {
+  opacity: 0.12;
+  mix-blend-mode: overlay;
+}
+
+/* --- gradient-filled display italic --- */
+.daar-grad-text {
+  background: linear-gradient(135deg, var(--daar-tan), var(--daar-ochre));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- nav underline --- */
+.daar-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--daar-tan), transparent);
+  transform: scaleX(0);
+  transition: transform 0.45s var(--daar-ease);
+}
+.daar-underline:hover::after,
+.daar-underline[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* --- scroll reveal ---
+   Gated on .js so the page is fully readable when the script never runs.
+   Never hide content behind JavaScript that JavaScript has to give back. */
+.js .daar-reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.9s var(--daar-ease),
+    transform 0.9s var(--daar-ease);
+}
+.js .daar-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js .daar-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* hide the horizontal category scroller's bar without hiding the scroll */
+  .daar-noscrollbar {
+    scrollbar-width: none;
+  }
+  .daar-noscrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

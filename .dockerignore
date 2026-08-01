@@ -1,0 +1,26 @@
+node_modules
+.next
+.git
+.gitignore
+
+# Local secrets must never enter the image — values come from the VPS .env
+.env
+.env.local
+.env.*.local
+
+# Local dev artefacts
+server.log
+server.err.log
+storage/uploads
+backups
+.verify
+
+# Reference material, not shipped code
+design
+public/brand/logo/*Logo*.svg
+
+# Editor / OS noise
+.vscode
+.idea
+.DS_Store
+Thumbs.db

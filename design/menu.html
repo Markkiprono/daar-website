@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu — Daar &amp; Bakery</title>
+<meta name="description" content="The Daar Cafe &amp; Bakery menu. Pastries, coffee, breakfast, lunch and cakes, baked fresh in Nairobi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Jost:wght@300;400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+
+<!-- ============ OBSOLETE NOTICE ============
+     Superseded by the real site in Phase 3. Kept only as a design record.
+     Its items and photos are invented placeholders and do NOT match the
+     database — that mismatch caused real confusion, hence this banner. -->
+<div style="position:sticky;top:0;z-index:999;background:#b4262b;color:#fff;
+            padding:14px 20px;text-align:center;font:500 14px/1.5 system-ui,sans-serif">
+  ⚠️ <strong>OLD MOCKUP — not the real website.</strong>
+  Items and photos here are fake placeholders.
+  The live site is <a href="http://localhost:3000/menu" style="color:#fff;text-decoration:underline">http://localhost:3000/menu</a>
+</div>
+
+<!-- ============ NAV (static — no hero behind it) ============ -->
+<header class="nav is-static" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html" aria-label="Daar home">
+      <svg viewBox="0 0 260 400" fill="none" stroke="currentColor" stroke-width="15" aria-hidden="true">
+        <defs><mask id="m1"><rect width="260" height="400" fill="#fff"/><path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/></mask></defs>
+        <g mask="url(#m1)"><path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/><path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/></g>
+        <path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/><path d="M28 386 H88"/>
+        <circle cx="168" cy="268" r="8" fill="currentColor" stroke="none"/>
+      </svg>
+      <span><span class="bt">DAAR</span><span class="bs">by izzi</span></span>
+    </a>
+    <nav aria-label="Primary">
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="menu.html" aria-current="page">Menu</a></li>
+        <li><a href="index.html#story">Story</a></li>
+        <li><a href="index.html#visit">Visit</a></li>
+      </ul>
+    </nav>
+    <a class="nav-cta" href="index.html#visit">Find us</a>
+    <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="drawer">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="drawer" id="drawer">
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="menu.html">Menu</a></li>
+    <li><a href="index.html#story">Story</a></li>
+    <li><a href="index.html#visit">Visit</a></li>
+  </ul>
+</div>
+
+<!-- ============ PAGE HEAD ============ -->
+<section class="tex tex-dark page-head">
+  <div class="wrap-narrow">
+    <p class="eyebrow eyebrow-gold">Baked this morning</p>
+    <h1>The Menu</h1>
+    <p>Everything below is made in our kitchen. Prices in Kenyan Shillings. Sold-out items are marked — the counter updates through the day.</p>
+  </div>
+</section>
+
+<!-- ============ CATEGORY BAR ============ -->
+<div class="catbar">
+  <div class="catbar-inner" role="group" aria-label="Filter by category">
+    <button class="chip" data-filter="all" aria-pressed="true">All</button>
+    <button class="chip" data-filter="breakfast" aria-pressed="false">Breakfast</button>
+    <button class="chip" data-filter="pastries" aria-pressed="false">Pastries</button>
+    <button class="chip" data-filter="coffee" aria-pressed="false">Coffee</button>
+    <button class="chip" data-filter="lunch" aria-pressed="false">Lunch</button>
+    <button class="chip" data-filter="cakes" aria-pressed="false">Cakes</button>
+  </div>
+</div>
+
+<!-- ============ BREAKFAST ============ -->
+<section class="menu-section tex tex-light" id="breakfast" data-cat="breakfast">
+  <div class="wrap">
+    <h2>Breakfast</h2>
+    <p class="cat-note">Served from opening until 11:30.</p>
+    <div class="menu-grid">
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-05.jpg" alt="Shakshuka with baked eggs and sourdough" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Shakshuka</h3><span class="pr">KES 950</span></div>
+        <p class="ds">Slow tomato, baked eggs, sourdough soldiers.</p>
+        <div class="tags"><span class="tag tag-veg">Vegetarian</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-03.jpg" alt="Cardamom bun, hand-knotted" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Cardamom Bun</h3><span class="pr">KES 350</span></div>
+        <p class="ds">Laminated overnight, hand-knotted, baked at six.</p>
+        <div class="tags"><span class="tag tag-best">Bestseller</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-06.jpg" alt="Chocolate babka, twisted and glazed" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Chocolate Babka</h3><span class="pr">KES 550</span></div>
+        <p class="ds">Dark chocolate, twisted twice, glazed warm.</p>
+        <div class="tags"><span class="tag tag-new">New</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PASTRIES ============ -->
+<section class="menu-section tex tex-light" id="pastries" data-cat="pastries">
+  <div class="wrap">
+    <h2>Pastries</h2>
+    <p class="cat-note">Folded by hand. Batches through the morning.</p>
+    <div class="menu-grid">
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-tart.jpg" alt="Raspberry and pistachio tart dusted with icing sugar" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Raspberry &amp; Pistachio Tart</h3><span class="pr">KES 650</span></div>
+        <p class="ds">Almond frangipane, fresh raspberries, Sicilian pistachio.</p>
+        <div class="tags"><span class="tag tag-best">Bestseller</span><span class="tag tag-veg">Vegetarian</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-06.jpg" alt="Almond croissant" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Almond Croissant</h3><span class="pr">KES 420</span></div>
+        <p class="ds">Yesterday's croissant, today's frangipane. As intended.</p>
+        <div class="tags"><span class="tag tag-veg">Vegetarian</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot">
+          <img src="img/item-03.jpg" alt="Pain au chocolat" loading="lazy">
+          <div class="sold-veil"><span>Sold out</span></div>
+        </div>
+        <div class="row"><h3 class="nm">Pain au Chocolat</h3><span class="pr">KES 380</span></div>
+        <p class="ds">Two batons of dark chocolate, 27 layers.</p>
+        <div class="tags"><span class="tag">Limited</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COFFEE ============ -->
+<section class="menu-section tex tex-light" id="coffee" data-cat="coffee">
+  <div class="wrap">
+    <h2>Coffee</h2>
+    <p class="cat-note">Kenyan single origin, roasted for us each fortnight.</p>
+    <div class="menu-grid">
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-latte.jpg" alt="Layered iced latte in a double-walled glass" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Iced Latte</h3><span class="pr">KES 400</span></div>
+        <p class="ds">Double shot, cold milk, poured over ice.</p>
+        <div class="tags"><span class="tag tag-new">New</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/terrace-drink.jpg" alt="Citrus cooler served on the terrace" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Citrus Cooler</h3><span class="pr">KES 450</span></div>
+        <p class="ds">Orange, lemon, mint, soda. Built over ice.</p>
+        <div class="tags"><span class="tag">Vegan</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-latte.jpg" alt="Flat white" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Flat White</h3><span class="pr">KES 380</span></div>
+        <p class="ds">Ristretto double, steamed to 60°.</p>
+        <div class="tags"><span class="tag tag-best">Bestseller</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LUNCH ============ -->
+<section class="menu-section tex tex-light" id="lunch" data-cat="lunch">
+  <div class="wrap">
+    <h2>Lunch</h2>
+    <p class="cat-note">From midday.</p>
+    <div class="menu-grid">
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-05.jpg" alt="Open sandwich on house sourdough" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Sourdough Open Sandwich</h3><span class="pr">KES 890</span></div>
+        <p class="ds">House sourdough, whipped feta, roast tomato, dukkah.</p>
+        <div class="tags"><span class="tag tag-veg">Vegetarian</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-04.jpg" alt="Soup of the day with bread" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Soup of the Day</h3><span class="pr">KES 650</span></div>
+        <p class="ds">Ask the counter. Always with bread.</p>
+        <div class="tags"><span class="tag">Seasonal</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CAKES ============ -->
+<section class="menu-section tex tex-light" id="cakes" data-cat="cakes">
+  <div class="wrap">
+    <h2>Cakes</h2>
+    <p class="cat-note">Whole cakes to order — 48 hours' notice.</p>
+    <div class="menu-grid">
+      <article class="item reveal">
+        <div class="shot">
+          <img src="img/item-04.jpg" alt="Pistachio Basque cheesecake with a burnt top" loading="lazy">
+        </div>
+        <div class="row"><h3 class="nm">Pistachio Basque</h3><span class="pr">KES 700</span></div>
+        <p class="ds">Burnt top, soft centre. Twelve a day.</p>
+        <div class="tags"><span class="tag tag-best">Bestseller</span><span class="tag">Limited</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-tart.jpg" alt="Seasonal fruit tart" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Seasonal Fruit Tart</h3><span class="pr">KES 620</span></div>
+        <p class="ds">Whatever the market had that morning.</p>
+        <div class="tags"><span class="tag">Seasonal</span><span class="tag tag-veg">Vegetarian</span></div>
+      </article>
+      <article class="item reveal">
+        <div class="shot"><img src="img/item-06.jpg" alt="Whole celebration cake" loading="lazy"></div>
+        <div class="row"><h3 class="nm">Celebration Cake</h3><span class="pr">from KES 4,500</span></div>
+        <p class="ds">Your flavours, our hands. Order at the counter.</p>
+        <div class="tags"><span class="tag">To order</span></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="tex tex-dark footer">
+  <div class="wrap">
+    <div class="mk">
+      <svg viewBox="0 0 260 400" fill="none" stroke="currentColor" stroke-width="15" aria-hidden="true">
+        <defs><mask id="m2"><rect width="260" height="400" fill="#fff"/><path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/></mask></defs>
+        <g mask="url(#m2)"><path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/><path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/></g>
+        <path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/><path d="M28 386 H88"/>
+        <circle cx="168" cy="268" r="8" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <ul class="links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="menu.html">Menu</a></li>
+      <li><a href="index.html#story">Story</a></li>
+      <li><a href="index.html#visit">Visit</a></li>
+    </ul>
+    <p class="fine">© 2026 Daar &amp; Bakery · by izzi · Nairobi</p>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

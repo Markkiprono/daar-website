@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 400" role="img" aria-labelledby="daarMarkTitle">
+  <title id="daarMarkTitle">Daar — an open doorway</title>
+  <!--
+    Hand-authored approximation of the Daar door mark, traced from
+    DAAR LOGO/daar by izzi.pdf (page 3). Background-independent:
+    occlusion is done with a mask, not a filled backdrop, so it sits
+    on bone, charcoal or oxblood equally well.
+    PRODUCTION NOTE: replace with the original vector from the designer.
+  -->
+  <defs>
+    <mask id="daarDoorCut">
+      <rect width="260" height="400" fill="#fff"/>
+      <!-- the door panel occludes whatever sits behind it -->
+      <path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/>
+    </mask>
+  </defs>
+
+  <g fill="none" stroke="currentColor" stroke-width="13" stroke-linecap="butt">
+    <!-- back frame + opened leaf, cut where the door passes in front -->
+    <g mask="url(#daarDoorCut)">
+      <path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/>
+      <path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/>
+    </g>
+    <!-- the door itself, in front -->
+    <path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/>
+    <!-- foot -->
+    <path d="M28 386 H88"/>
+  </g>
+
+  <!-- handle -->
+  <circle cx="168" cy="268" r="7.5" fill="currentColor"/>
+</svg>

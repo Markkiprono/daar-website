@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daar &amp; Bakery — Nairobi</title>
+<meta name="description" content="Daar Cafe &amp; Bakery, Nairobi. Baked fresh each morning. Patience tastes better.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;1,6..96,400&family=Jost:wght@300;400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="site.css">
+<script>document.documentElement.classList.add('js')</script>
+</head>
+<body>
+
+<!-- ============ OBSOLETE NOTICE ============
+     Superseded by the real site in Phase 3. Kept only as a design record. -->
+<div style="position:sticky;top:0;z-index:999;background:#b4262b;color:#fff;
+            padding:14px 20px;text-align:center;font:500 14px/1.5 system-ui,sans-serif">
+  ⚠️ <strong>OLD MOCKUP — not the real website.</strong>
+  Items and photos here are fake placeholders.
+  The live site is <a href="http://localhost:3000" style="color:#fff;text-decoration:underline">http://localhost:3000</a>
+</div>
+
+<!-- ============ NAV ============ -->
+<header class="nav" id="nav">
+  <div class="nav-inner">
+    <a class="brand" href="index.html" aria-label="Daar home">
+      <svg viewBox="0 0 260 400" fill="none" stroke="currentColor" stroke-width="15" aria-hidden="true">
+        <defs><mask id="m1"><rect width="260" height="400" fill="#fff"/><path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/></mask></defs>
+        <g mask="url(#m1)"><path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/><path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/></g>
+        <path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/><path d="M28 386 H88"/>
+        <circle cx="168" cy="268" r="8" fill="currentColor" stroke="none"/>
+      </svg>
+      <span><span class="bt">DAAR</span><span class="bs">by izzi</span></span>
+    </a>
+
+    <nav aria-label="Primary">
+      <ul class="nav-links">
+        <li><a href="index.html" aria-current="page">Home</a></li>
+        <li><a href="menu.html">Menu</a></li>
+        <li><a href="#story">Story</a></li>
+        <li><a href="#visit">Visit</a></li>
+      </ul>
+    </nav>
+
+    <a class="nav-cta" href="menu.html">View Menu</a>
+
+    <button class="burger" id="burger" aria-label="Open menu" aria-expanded="false" aria-controls="drawer">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="drawer" id="drawer">
+  <ul>
+    <li><a href="index.html">Home</a></li>
+    <li><a href="menu.html">Menu</a></li>
+    <li><a href="#story">Story</a></li>
+    <li><a href="#visit">Visit</a></li>
+  </ul>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-media">
+    <img src="img/counter.jpg" alt="Daar takeaway boxes on a paint-marbled table inside the café" fetchpriority="high">
+  </div>
+  <div class="hero-grit" aria-hidden="true"></div>
+  <div class="hero-inner">
+    <p class="eyebrow eyebrow-gold">Nairobi · Café &amp; Bakery</p>
+    <h1>Patience<br><em>tastes better</em></h1>
+    <p class="sub">Proved slowly. Baked the same morning it's served.</p>
+    <div class="cta-row">
+      <a class="btn btn-gold" href="menu.html">Explore the menu</a>
+      <a class="btn btn-ghost" href="#visit">Find us</a>
+    </div>
+  </div>
+  <div class="scroll-hint">Scroll</div>
+</section>
+
+<!-- ============ INTRO ============ -->
+<section class="tex tex-light">
+  <div class="wrap-narrow center reveal">
+    <p class="eyebrow">Daar means home</p>
+    <p class="lead">Behind our door is a small kitchen that starts before dawn. We laminate by hand, prove overnight, and bake in batches — which is why some things are gone by noon, and why we think that's a fair trade.</p>
+  </div>
+</section>
+
+<!-- ============ CATEGORIES ============ -->
+<section class="tex tex-light" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">What we make</p>
+      <h2>Our Categories</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="cats reveal">
+      <a class="cat-tile" href="menu.html#pastries">
+        <img src="img/item-tart.jpg" alt="Raspberry and pistachio tart">
+        <span class="label">Pastries<span class="count">18 items</span></span>
+      </a>
+      <a class="cat-tile" href="menu.html#coffee">
+        <img src="img/item-latte.jpg" alt="Layered iced latte">
+        <span class="label">Coffee<span class="count">12 items</span></span>
+      </a>
+      <a class="cat-tile" href="menu.html#breakfast">
+        <img src="img/item-05.jpg" alt="A breakfast plate at Daar">
+        <span class="label">Breakfast<span class="count">9 items</span></span>
+      </a>
+      <a class="cat-tile" href="menu.html#cakes">
+        <img src="img/item-06.jpg" alt="A cake from the Daar counter">
+        <span class="label">Cakes<span class="count">14 items</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHEF'S SPECIAL ============ -->
+<section class="tex tex-dark special">
+  <div class="wrap">
+    <div class="special-grid">
+      <div class="special-media reveal">
+        <span class="special-badge">Chef's Special</span>
+        <img src="img/item-04.jpg" alt="Pistachio Basque cheesecake with a burnt top">
+      </div>
+      <div class="reveal">
+        <p class="eyebrow eyebrow-gold">This week only</p>
+        <h2>Pistachio Basque</h2>
+        <p class="price">KES 700</p>
+        <p style="margin-top:var(--s-5)">Burnt on top, barely set in the middle. Sicilian pistachio folded through a custard that we bake hot and fast, then rest for a day before it ever reaches the counter.</p>
+        <p style="margin-top:var(--s-4)"><strong style="font-weight:500;color:var(--daar-tan)">Twelve a day.</strong> When they're gone, they're gone.</p>
+        <div class="cta-row" style="justify-content:flex-start">
+          <a class="btn btn-gold" href="menu.html#cakes">See the full menu</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ STORY ============ -->
+<section class="tex tex-ox" id="story">
+  <div class="wrap">
+    <div class="story-grid">
+      <div class="story-media reveal">
+        <img src="img/patience-plates.jpg" alt="Daar plates reading ‘Patience tastes better’ resting in sand">
+      </div>
+      <div class="reveal">
+        <p class="eyebrow eyebrow-gold">Our story</p>
+        <h2 style="font-size:var(--t-h1);color:var(--daar-cream)">A door on Ngong Road</h2>
+        <p style="margin-top:var(--s-5);color:rgba(242,228,212,.85);font-weight:300">
+          <em>Daar</em> means home. We built one room around one idea — that the things worth eating can't be hurried. Grey plaster, steel, a red bench by the window, and a kitchen that never quite stops.
+        </p>
+        <p style="color:rgba(242,228,212,.85);font-weight:300">
+          Everything is made here. Nothing arrives frozen. The pastry you pick up at seven was folded the night before by someone who will be there when you walk in.
+        </p>
+        <div class="cta-row" style="justify-content:flex-start">
+          <a class="btn btn-ghost" href="#">Read the full story</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VISIT ============ -->
+<section class="tex tex-light" id="visit">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow">Come in</p>
+      <h2>Visit</h2>
+      <div class="rule"></div>
+    </div>
+    <div class="visit-grid reveal">
+      <div class="visit-col">
+        <h3>Where</h3>
+        <p>Ngong Road<br>Nairobi, Kenya</p>
+        <p style="margin-top:var(--s-4)"><a href="#" style="color:var(--daar-oxblood)">Open in Maps →</a></p>
+      </div>
+      <div class="visit-col">
+        <h3>Hours</h3>
+        <div class="hours-row"><span>Mon – Thu</span><span>7:00 — 21:00</span></div>
+        <div class="hours-row"><span>Fri</span><span>7:00 — 22:00</span></div>
+        <div class="hours-row"><span>Sat – Sun</span><span>8:00 — 22:00</span></div>
+      </div>
+      <div class="visit-col">
+        <h3>Contact</h3>
+        <p>hello@daarbyizzi.com<br>+254 700 000 000</p>
+        <p style="margin-top:var(--s-4)"><a href="#" style="color:var(--daar-oxblood)">Instagram →</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="tex tex-dark footer">
+  <div class="wrap">
+    <div class="mk">
+      <svg viewBox="0 0 260 400" fill="none" stroke="currentColor" stroke-width="15" aria-hidden="true">
+        <defs><mask id="m2"><rect width="260" height="400" fill="#fff"/><path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/></mask></defs>
+        <g mask="url(#m2)"><path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/><path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/></g>
+        <path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/><path d="M28 386 H88"/>
+        <circle cx="168" cy="268" r="8" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <ul class="links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="menu.html">Menu</a></li>
+      <li><a href="#story">Story</a></li>
+      <li><a href="#visit">Visit</a></li>
+    </ul>
+    <p class="fine">© 2026 Daar &amp; Bakery · by izzi · Nairobi</p>
+  </div>
+</footer>
+
+<script src="site.js"></script>
+</body>
+</html>

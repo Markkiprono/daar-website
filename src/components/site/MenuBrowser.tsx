@@ -1,0 +1,283 @@
+"use client";
+
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { MenuItemCard, type MenuItemForCard } from "./MenuItemCard";
+import { Reveal } from "./Reveal";
+import { expandQuery, matches, normalise, SUGGESTED_SEARCHES } from "@/lib/search-terms";
+
+export type BrowserCategory = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  items: MenuItemForCard[];
+};
+
+/**
+ * Menu search + category filter.
+ *
+ * Deliberately client-side: a café menu is tens of items, so the whole thing
+ * ships with the page and filtering is instant — no request per keystroke,
+ * which matters on mobile data. Items are still server-rendered in the
+ * initial HTML, so search engines and no-JS visitors see the full menu.
+ *
+ * Matching runs through src/lib/search-terms.ts, which maps what people type
+ * ("lunch", "hot drink", "no meat") onto the words the menu actually uses.
+ */
+export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
+  const [query, setQuery] = useState("");
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [scrolledCat, setScrolledCat] = useState<string | null>(categories[0]?.slug ?? null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const deferredQuery = useDeferredValue(query);
+  const searching = deferredQuery.trim().length > 0;
+  const filtering = searching || activeCat !== null;
+
+  /**
+   * Build the searchable text once per item.
+   *
+   * Includes the category name and every tag, so "vegetarian" or "pastries"
+   * find things even when the words appear nowhere in the item itself.
+   */
+  const indexed = useMemo(
+    () =>
+      categories.map((c) => ({
+        ...c,
+        items: c.items.map((item) => ({
+          item,
+          haystack: normalise(
+            [
+              item.name,
+              item.description ?? "",
+              c.name,
+              c.description ?? "",
+              ...item.tags.map((t) => t.tag.name),
+              item.isAvailable ? "available" : "sold out",
+            ].join(" "),
+          ),
+        })),
+      })),
+    [categories],
+  );
+
+  const results = useMemo(() => {
+    const groups = expandQuery(deferredQuery);
+    return indexed
+      .filter((c) => activeCat === null || c.slug === activeCat)
+      .map((c) => ({
+        ...c,
+        items: c.items.filter(({ haystack }) => matches(haystack, groups)).map(({ item }) => item),
+      }))
+      .filter((c) => c.items.length > 0);
+  }, [indexed, deferredQuery, activeCat]);
+
+  const count = results.reduce((n, c) => n + c.items.length, 0);
+
+  // "/" focuses search, Escape clears it.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typingElsewhere =
+        e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+      if (e.key === "/" && !typingElsewhere) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+      if (e.key === "Escape" && typingElsewhere) {
+        setQuery("");
+        inputRef.current?.blur();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Track which section is on screen — only meaningful while browsing.
+  useEffect(() => {
+    if (filtering) return;
+    const els = categories
+      .map((c) => document.getElementById(c.slug))
+      .filter((el): el is HTMLElement => el !== null);
+    if (els.length === 0) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setScrolledCat(visible[0].target.id);
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: 0 },
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [categories, filtering]);
+
+  const clearAll = () => {
+    setQuery("");
+    setActiveCat(null);
+  };
+
+  return (
+    <>
+      {/* ---------- sticky search + categories ---------- */}
+      <div className="sticky top-[73px] z-30 border-b border-daar-rule bg-daar-bone/95 backdrop-blur-md">
+        <div className="mx-auto max-w-[1240px] px-5 pt-4">
+          <label htmlFor="menu-search" className="sr-only">
+            Search the menu
+          </label>
+          <div className="relative">
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-daar-muted"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" strokeLinecap="round" />
+            </svg>
+
+            <input
+              ref={inputRef}
+              id="menu-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search the menu"
+              autoComplete="off"
+              className="h-12 w-full rounded-full border border-daar-rule bg-white pl-11 pr-11 text-[16px] text-daar-ink outline-none transition placeholder:text-daar-muted focus:border-daar-tan focus:ring-2 focus:ring-daar-tan/30"
+            />
+
+            {query && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  inputRef.current?.focus();
+                }}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-daar-muted transition hover:bg-daar-rule/50 hover:text-daar-ink"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Category chips. No "All" — an active chip toggles itself off. */}
+          <nav aria-label="Menu categories" className="daar-noscrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-3">
+            {categories.map((c) => {
+              const isActive = filtering ? activeCat === c.slug : scrolledCat === c.slug;
+              return (
+                <button
+                  key={c.slug}
+                  type="button"
+                  onClick={() => {
+                    if (searching || activeCat !== null) {
+                      // Filtering: tapping the active chip clears it.
+                      setActiveCat((prev) => (prev === c.slug ? null : c.slug));
+                    } else {
+                      // Browsing: chips jump to the section.
+                      document.getElementById(c.slug)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                  aria-pressed={isActive}
+                  className={[
+                    "shrink-0 whitespace-nowrap rounded-full border px-5 py-2.5 font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] transition",
+                    isActive
+                      ? "border-daar-oxblood bg-daar-oxblood text-daar-cream"
+                      : "border-daar-rule bg-white text-daar-muted hover:border-daar-tan hover:text-daar-ink",
+                  ].join(" ")}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      </div>
+
+      <div aria-live="polite" className="sr-only">
+        {searching ? `${count} result${count === 1 ? "" : "s"} for ${deferredQuery}` : ""}
+      </div>
+
+      {filtering && (
+        <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-3 px-5 pt-8">
+          <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
+            {count} {count === 1 ? "item" : "items"}
+            {searching ? ` matching “${deferredQuery.trim()}”` : ""}
+          </p>
+          <button
+            type="button"
+            onClick={clearAll}
+            className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-oxblood underline underline-offset-4 transition hover:text-daar-ink"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {count === 0 ? (
+        <div className="mx-auto max-w-[1240px] px-5 py-20 text-center">
+          <p className="font-[family-name:var(--font-display)] text-2xl">Nothing matches that.</p>
+          <p className="mt-3 text-sm text-daar-muted">Try one of these instead:</p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            {SUGGESTED_SEARCHES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => {
+                  setActiveCat(null);
+                  setQuery(s);
+                }}
+                className="rounded-full border border-daar-rule bg-white px-4 py-2 text-sm text-daar-muted transition hover:border-daar-tan hover:text-daar-ink"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={clearAll}
+            className="mt-7 rounded-full border border-daar-oxblood px-7 py-3 font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-oxblood transition hover:bg-daar-oxblood hover:text-daar-cream"
+          >
+            Show the whole menu
+          </button>
+        </div>
+      ) : (
+        results.map((category, ci) => (
+          <section key={category.id} id={category.slug} className="scroll-mt-44 px-5 py-10">
+            <div className="mx-auto max-w-[1240px]">
+              {/* Category header — a hairline rule and the item count are
+                  enough to read as a section divider rather than a dish. */}
+              <header className="border-t border-daar-rule pt-5">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h2 className="font-[family-name:var(--font-display)] text-[clamp(1.6rem,4.5vw,2.5rem)] leading-none">
+                    {category.name}
+                  </h2>
+                  <span className="font-[family-name:var(--font-label)] text-[0.7rem] uppercase tracking-[0.18em] text-daar-muted">
+                    {category.items.length} {category.items.length === 1 ? "item" : "items"}
+                  </span>
+                </div>
+                {category.description && !filtering && (
+                  <p className="mt-2 text-sm text-daar-muted">{category.description}</p>
+                )}
+              </header>
+
+              <div className="mt-8 grid gap-x-5 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+                {category.items.map((item, ii) => (
+                  <Reveal key={item.id}>
+                    <MenuItemCard item={item} priority={ci === 0 && ii < 3} />
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </section>
+        ))
+      )}
+    </>
+  );
+}

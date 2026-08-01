@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daar — Style Board — Phase 0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,700&family=Jost:wght@300;400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* ===== texture engine =====
+   Grunge is generated, not photographed: SVG fractal noise means zero
+   image payload, infinite resolution, and it tints to any surface. */
+:root{
+  --tex-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --tex-plaster: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.014' numOctaves='5' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--daar-bone);color:var(--text);
+  font-family:var(--font-body);font-size:var(--t-body);line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+h1,h2,h3{font-family:var(--font-display);font-weight:400;line-height:1.05;margin:0}
+
+.wrap{max-width:1180px;margin-inline:auto;padding-inline:var(--s-5)}
+section{padding-block:var(--s-9)}
+.eyebrow{
+  font-family:var(--font-sans);font-size:var(--t-micro);font-weight:400;
+  letter-spacing:var(--track-wide);text-transform:uppercase;color:var(--text-muted);
+  margin:0 0 var(--s-4);
+}
+.sec-head{border-top:1px solid var(--rule);padding-top:var(--s-4);margin-bottom:var(--s-6)}
+.sec-head h2{font-size:var(--t-h2)}
+.note{font-size:var(--t-small);color:var(--text-muted);max-width:62ch}
+
+/* grain over everything — the film-stock feel */
+.grain{position:relative}
+.grain::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:var(--tex-grain);opacity:.16;mix-blend-mode:multiply;
+}
+
+/* ===== plaster surface — matches the café's troweled walls ===== */
+.plaster{position:relative;background:var(--daar-charcoal);color:var(--text-invert);overflow:hidden}
+.plaster::before{
+  content:"";position:absolute;inset:-20%;pointer-events:none;
+  background-image:var(--tex-plaster);
+  opacity:.55;mix-blend-mode:overlay;filter:contrast(140%) blur(.4px);
+}
+.plaster::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:var(--tex-grain);opacity:.22;mix-blend-mode:overlay;
+}
+.plaster > *{position:relative;z-index:1}
+
+.oxblood{background:var(--daar-oxblood);color:var(--daar-cream)}
+
+/* ===== masthead ===== */
+.masthead{padding-block:var(--s-9) var(--s-8);text-align:center}
+.mark{width:74px;margin-inline:auto;color:var(--daar-tan)}
+.wordmark{
+  font-family:var(--font-display);font-weight:500;
+  font-size:clamp(3rem,13vw,6.5rem);letter-spacing:.02em;
+  color:var(--daar-tan);margin-top:var(--s-5);line-height:1;
+}
+.byline{
+  font-family:var(--font-sans);font-weight:300;letter-spacing:.32em;
+  text-transform:lowercase;color:var(--daar-tan);opacity:.8;
+  font-size:var(--t-small);margin-top:var(--s-3);
+}
+.masthead .kicker{
+  font-family:var(--font-sans);letter-spacing:var(--track-wide);
+  text-transform:uppercase;font-size:var(--t-micro);
+  color:var(--daar-mist);margin-top:var(--s-7);
+}
+
+/* ===== swatches ===== */
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s-4)}
+.sw{border:1px solid var(--rule);background:#fff}
+.sw .chip{height:96px}
+.sw .meta{padding:var(--s-3)}
+.sw .nm{font-family:var(--font-sans);font-size:var(--t-small);letter-spacing:.04em}
+.sw .hex{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:var(--t-micro);color:var(--text-muted)}
+.sw .use{font-size:var(--t-micro);color:var(--text-muted);margin-top:var(--s-1);display:block}
+
+/* ===== type specimen ===== */
+.spec{border-top:1px solid var(--rule);padding-block:var(--s-5);display:grid;gap:var(--s-2)}
+.spec .label{font-family:var(--font-sans);font-size:var(--t-micro);letter-spacing:var(--track-wide);text-transform:uppercase;color:var(--text-muted)}
+.d-hero{font-family:var(--font-display);font-size:var(--t-hero);line-height:.92;letter-spacing:-.01em}
+.d-h1{font-family:var(--font-display);font-size:var(--t-h1);line-height:1.02}
+.d-h2{font-family:var(--font-display);font-size:var(--t-h2)}
+.d-nav{font-family:var(--font-sans);letter-spacing:var(--track-wide);text-transform:uppercase;font-size:var(--t-small)}
+
+/* ===== the arch — Daar's signature form ===== */
+.arch{border-radius:var(--arch);overflow:hidden;position:relative}
+.arch img{width:100%;height:100%;object-fit:cover}
+.arch-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:var(--s-5);align-items:end}
+.arch-tall{aspect-ratio:3/5}
+.arch-mid{aspect-ratio:3/4}
+
+/* ===== hero mock ===== */
+.hero{position:relative;min-height:78vh;display:grid;place-items:center;text-align:center;overflow:hidden;background:var(--daar-ink)}
+.hero-bg{position:absolute;inset:0}
+.hero-bg img{width:100%;height:100%;object-fit:cover;opacity:.62}
+.hero-bg::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(18,16,15,.55),rgba(18,16,15,.25) 40%,rgba(18,16,15,.85));
+}
+.hero-inner{position:relative;z-index:2;padding:var(--s-8) var(--s-5);max-width:900px}
+.hero h1{color:var(--daar-bone);font-size:var(--t-hero);line-height:.94}
+.hero h1 em{font-style:italic;color:var(--daar-tan)}
+.hero .sub{color:var(--daar-cream);opacity:.85;margin-top:var(--s-5);font-size:var(--t-h3);font-family:var(--font-body)}
+.hero .cta-row{margin-top:var(--s-7);display:flex;gap:var(--s-4);justify-content:center;flex-wrap:wrap}
+
+/* ===== buttons ===== */
+.btn{
+  font-family:var(--font-sans);letter-spacing:var(--track-wide);text-transform:uppercase;
+  font-size:var(--t-micro);padding:.95rem 2rem;border-radius:var(--arch-soft);
+  border:1px solid currentColor;cursor:pointer;text-decoration:none;display:inline-block;
+  transition:background var(--dur) var(--ease),color var(--dur) var(--ease);
+}
+.btn-solid{background:var(--daar-tan);border-color:var(--daar-tan);color:var(--daar-ink)}
+.btn-solid:hover{background:var(--daar-cream);border-color:var(--daar-cream)}
+.btn-ghost{background:transparent;color:var(--daar-cream)}
+.btn-ghost:hover{background:var(--daar-cream);color:var(--daar-ink)}
+.btn-dark{background:var(--daar-oxblood);border-color:var(--daar-oxblood);color:var(--daar-cream)}
+
+/* ===== category nav ===== */
+.catnav{display:flex;gap:var(--s-2);overflow-x:auto;padding-block:var(--s-3);scrollbar-width:none}
+.catnav::-webkit-scrollbar{display:none}
+.cat{
+  flex:0 0 auto;font-family:var(--font-sans);font-size:var(--t-micro);
+  letter-spacing:var(--track-wide);text-transform:uppercase;
+  padding:.6rem 1.15rem;border:1px solid var(--rule);border-radius:999px;
+  background:#fff;color:var(--text-muted);white-space:nowrap;cursor:pointer;
+}
+.cat[aria-current="true"]{background:var(--daar-oxblood);border-color:var(--daar-oxblood);color:var(--daar-cream)}
+
+/* ===== menu card — the centrepiece ===== */
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:var(--s-6) var(--s-5)}
+.item{background:transparent}
+.item .shot{border-radius:var(--arch);overflow:hidden;aspect-ratio:4/5;background:var(--daar-mist);position:relative}
+.item .shot img{width:100%;height:100%;object-fit:cover;transition:transform 1.1s var(--ease)}
+.item:hover .shot img{transform:scale(1.045)}
+.item .row{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s-3);margin-top:var(--s-4)}
+.item .nm{font-family:var(--font-display);font-size:var(--t-h3);line-height:1.15}
+.item .pr{font-family:var(--font-sans);font-size:var(--t-small);letter-spacing:.06em;color:var(--daar-oxblood);white-space:nowrap}
+.item .ds{font-size:var(--t-small);color:var(--text-muted);margin-top:var(--s-2)}
+.tags{display:flex;gap:var(--s-2);flex-wrap:wrap;margin-top:var(--s-3)}
+.tag{
+  font-family:var(--font-sans);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+  padding:.28rem .6rem;border-radius:2px;border:1px solid var(--rule);color:var(--text-muted);
+}
+.tag-best{background:var(--daar-oxblood);border-color:var(--daar-oxblood);color:var(--daar-cream)}
+.tag-new{background:var(--daar-tan);border-color:var(--daar-tan);color:var(--daar-ink)}
+.tag-veg{border-color:#7B8B5A;color:#5F6E42}
+.sold{position:absolute;inset:0;background:rgba(18,16,15,.62);display:grid;place-items:center}
+.sold span{font-family:var(--font-sans);font-size:var(--t-micro);letter-spacing:var(--track-wide);text-transform:uppercase;color:var(--daar-bone);border:1px solid var(--daar-bone);padding:.5rem 1rem;border-radius:2px}
+
+/* ===== paint-marble strip ===== */
+.marble{
+  height:120px;border-radius:var(--radius-card);
+  background:
+    radial-gradient(120% 180% at 8% 40%, var(--daar-blush) 0 12%, transparent 13%),
+    radial-gradient(90% 160% at 30% 70%, var(--daar-red) 0 14%, transparent 15%),
+    radial-gradient(120% 150% at 55% 30%, var(--daar-ochre) 0 16%, transparent 17%),
+    radial-gradient(100% 170% at 78% 65%, var(--daar-orange) 0 14%, transparent 15%),
+    linear-gradient(105deg,#F7F0E4,#EFE3D2 45%,#F7F0E4);
+  filter:blur(.3px) saturate(105%);
+}
+
+.two{display:grid;grid-template-columns:1fr;gap:var(--s-6)}
+@media(min-width:820px){.two{grid-template-columns:1fr 1fr;gap:var(--s-8);align-items:center}}
+
+.callout{border-left:2px solid var(--daar-tan);padding-left:var(--s-4);margin-block:var(--s-5)}
+footer{padding-block:var(--s-8);text-align:center}
+</style>
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="plaster masthead">
+  <div class="wrap">
+    <div class="mark">
+      <svg viewBox="0 0 260 400" fill="none" stroke="currentColor" stroke-width="13" aria-label="Daar door mark">
+        <defs><mask id="dc"><rect width="260" height="400" fill="#fff"/><path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/></mask></defs>
+        <g mask="url(#dc)">
+          <path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/>
+          <path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/>
+        </g>
+        <path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/>
+        <path d="M28 386 H88"/>
+        <circle cx="168" cy="268" r="7.5" fill="currentColor" stroke="none"/>
+      </svg>
+    </div>
+    <div class="wordmark">DAAR</div>
+    <div class="byline">by izzi</div>
+    <p class="kicker">Style Board · Phase 0 · Nairobi</p>
+  </div>
+</header>
+
+<!-- ============ DIRECTION ============ -->
+<section class="grain">
+  <div class="wrap">
+    <div class="sec-head"><p class="eyebrow">01 — Direction</p><h2>Black, bone, and the room's own colour</h2></div>
+    <div class="two">
+      <div>
+        <p>The palette isn't invented — it's photographed. Daar's walls are troweled grunge plaster, the furniture is brushed steel, the banquettes are a hard red, and the tables are poured paint. The brand PDF supplies oxblood and tan. Everything below comes from those two sources and nothing else.</p>
+        <div class="callout">
+          <p style="margin:0"><strong>The arch is the system.</strong> The door in your logo becomes the shape of every photograph, card and button on the site. One idea, applied relentlessly — that's what makes a site look designed rather than assembled.</p>
+        </div>
+        <p class="note">Texture is generated with SVG fractal noise rather than image files: no payload, resolution-independent, and it tints to any surface. Important when most of your visitors are on mobile data.</p>
+      </div>
+      <div class="arch arch-mid"><img src="img/atmos-02.jpg" alt="A guest seated on Daar's red banquette against the grey plaster wall, holding an iced coffee"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HERO MOCK ============ -->
+<section style="padding:0">
+  <div class="hero">
+    <div class="hero-bg"><img src="img/counter.jpg" alt="Daar packaging on a paint-marbled table in the café"></div>
+    <div class="hero-inner">
+      <p class="eyebrow" style="color:var(--daar-tan)">Nairobi · Café &amp; Bakery</p>
+      <h1>Patience<br><em>tastes better</em></h1>
+      <p class="sub">Baked each morning behind the door on Ngong Road.</p>
+      <div class="cta-row">
+        <a class="btn btn-solid" href="#menu">View the menu</a>
+        <a class="btn btn-ghost" href="#">Find us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PALETTE ============ -->
+<section class="grain">
+  <div class="wrap">
+    <div class="sec-head"><p class="eyebrow">02 — Palette</p><h2>Colour</h2></div>
+    <div class="sw-grid">
+      <div class="sw"><div class="chip" style="background:#481819"></div><div class="meta"><div class="nm">Oxblood</div><div class="hex">#481819</div><span class="use">Brand. Type, CTAs, footer.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#d2af8a"></div><div class="meta"><div class="nm">Tan</div><div class="hex">#d2af8a</div><span class="use">Brand. Accents, rules, hover.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#12100F"></div><div class="meta"><div class="nm">Ink</div><div class="hex">#12100F</div><span class="use">Photo shadow. Hero ground.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#2A2A2C"></div><div class="meta"><div class="nm">Plaster</div><div class="hex">#2A2A2C</div><span class="use">Your wall. Textured sections.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#55555A"></div><div class="meta"><div class="nm">Steel</div><div class="hex">#55555A</div><span class="use">Furniture mid-tone.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#FAF6EF"></div><div class="meta"><div class="nm">Bone</div><div class="hex">#FAF6EF</div><span class="use">Primary page ground.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#F2E4D4"></div><div class="meta"><div class="nm">Cream</div><div class="hex">#F2E4D4</div><span class="use">Type on dark.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#B4262B"></div><div class="meta"><div class="nm">Banquette</div><div class="hex">#B4262B</div><span class="use">Accent only. Sparing.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E8A22B"></div><div class="meta"><div class="nm">Ochre</div><div class="hex">#E8A22B</div><span class="use">From the tables.</span></div></div>
+      <div class="sw"><div class="chip" style="background:#E2622C"></div><div class="meta"><div class="nm">Orange</div><div class="hex">#E2622C</div><span class="use">From the tables.</span></div></div>
+    </div>
+
+    <p class="eyebrow" style="margin-top:var(--s-7)">Paint-marble — section dividers &amp; category headers</p>
+    <div class="marble"></div>
+    <p class="note" style="margin-top:var(--s-3)">Rebuilt in CSS from your tables, so it scales and animates. Used sparingly — a divider between sections, never behind text.</p>
+  </div>
+</section>
+
+<!-- ============ TYPE ============ -->
+<section class="grain">
+  <div class="wrap">
+    <div class="sec-head"><p class="eyebrow">03 — Typography</p><h2>Type</h2></div>
+    <div class="spec"><span class="label">Display — Bodoni Moda · headlines</span><div class="d-hero">Freshly baked</div></div>
+    <div class="spec"><span class="label">Display italic — accents</span><div class="d-h1"><em>Patience tastes better</em></div></div>
+    <div class="spec"><span class="label">Section heading</span><div class="d-h2">Our Story</div></div>
+    <div class="spec"><span class="label">Nav / label — Jost, echoes “by izzi”</span><div class="d-nav">Menu &nbsp;·&nbsp; Story &nbsp;·&nbsp; Visit</div></div>
+    <div class="spec"><span class="label">Body — Inter, tuned for small screens</span><p style="margin:0;max-width:60ch">Cardamom, butter and time. Everything at Daar is proved slowly and baked the same morning it is served — which is why some things sell out before noon, and why we think that's a fair trade.</p></div>
+    <p class="note" style="margin-top:var(--s-5)">Three families is a real payload cost. Droppable to two by using Jost for body text — say the word and I'll compare them side by side on a phone.</p>
+  </div>
+</section>
+
+<!-- ============ ARCH ============ -->
+<section class="plaster">
+  <div class="wrap">
+    <div class="sec-head" style="border-color:rgba(242,228,212,.22)"><p class="eyebrow" style="color:var(--daar-mist)">04 — Form</p><h2 style="color:var(--daar-cream)">The arch, applied</h2></div>
+    <div class="arch-row">
+      <div class="arch arch-tall"><img src="img/terrace-drink.jpg" alt="An iced drink in a Daar cup on the terrace"></div>
+      <div class="arch arch-tall"><img src="img/interior-01.jpg" alt="Daar's dining room in brushed steel against the plaster wall"></div>
+      <div class="arch arch-tall"><img src="img/packaging-marble.jpg" alt="Daar takeaway boxes being lifted from a paint-marbled table"></div>
+    </div>
+    <p class="note" style="color:var(--daar-mist);margin-top:var(--s-6)">Every photograph on the site sits inside the doorway. Cheap to implement, impossible to mistake for anyone else.</p>
+  </div>
+</section>
+
+<!-- ============ MENU ============ -->
+<section class="grain" id="menu">
+  <div class="wrap">
+    <div class="sec-head"><p class="eyebrow">05 — The centrepiece</p><h2>Menu</h2></div>
+    <nav class="catnav" aria-label="Menu categories">
+      <button class="cat" aria-current="true">All</button>
+      <button class="cat">Breakfast</button>
+      <button class="cat">Pastries</button>
+      <button class="cat">Coffee</button>
+      <button class="cat">Lunch</button>
+      <button class="cat">Cakes</button>
+    </nav>
+
+    <div class="menu-grid" style="margin-top:var(--s-6)">
+      <article class="item">
+        <div class="shot"><img src="img/item-tart.jpg" alt="Raspberry and pistachio tart dusted with icing sugar"></div>
+        <div class="row"><h3 class="nm">Raspberry &amp; Pistachio Tart</h3><span class="pr">KES 650</span></div>
+        <p class="ds">Almond frangipane, fresh raspberries, Sicilian pistachio.</p>
+        <div class="tags"><span class="tag tag-best">Bestseller</span><span class="tag tag-veg">Vegetarian</span></div>
+      </article>
+
+      <article class="item">
+        <div class="shot"><img src="img/item-latte.jpg" alt="Layered iced latte in a double-walled glass"></div>
+        <div class="row"><h3 class="nm">Iced Latte</h3><span class="pr">KES 400</span></div>
+        <p class="ds">Double shot, cold milk, poured over ice.</p>
+        <div class="tags"><span class="tag tag-new">New</span></div>
+      </article>
+
+      <article class="item">
+        <div class="shot"><img src="img/item-03.jpg" alt="A plated item from the Daar kitchen"></div>
+        <div class="row"><h3 class="nm">Cardamom Bun</h3><span class="pr">KES 350</span></div>
+        <p class="ds">Laminated overnight, hand-knotted, baked at six.</p>
+        <div class="tags"><span class="tag tag-best">Bestseller</span></div>
+      </article>
+
+      <article class="item">
+        <div class="shot">
+          <img src="img/item-04.jpg" alt="A plated item from the Daar kitchen">
+          <div class="sold"><span>Sold out</span></div>
+        </div>
+        <div class="row"><h3 class="nm">Pistachio Basque</h3><span class="pr">KES 700</span></div>
+        <p class="ds">Burnt top, soft centre. Twelve a day.</p>
+        <div class="tags"><span class="tag">Limited</span></div>
+      </article>
+
+      <article class="item">
+        <div class="shot"><img src="img/item-05.jpg" alt="A plated item from the Daar kitchen"></div>
+        <div class="row"><h3 class="nm">Shakshuka</h3><span class="pr">KES 950</span></div>
+        <p class="ds">Slow tomato, baked eggs, sourdough soldiers.</p>
+        <div class="tags"><span class="tag tag-veg">Vegetarian</span></div>
+      </article>
+
+      <article class="item">
+        <div class="shot"><img src="img/item-06.jpg" alt="A plated item from the Daar kitchen"></div>
+        <div class="row"><h3 class="nm">Chocolate Babka</h3><span class="pr">KES 550</span></div>
+        <p class="ds">Dark chocolate, twisted twice, glazed warm.</p>
+        <div class="tags"><span class="tag tag-new">New</span></div>
+      </article>
+    </div>
+    <p class="note" style="margin-top:var(--s-6)">Item names and prices are placeholders. Photographs, names, prices, badges and the sold-out state are all admin-controlled — the owner sets every one of these from his phone.</p>
+  </div>
+</section>
+
+<!-- ============ STORY ============ -->
+<section class="oxblood grain">
+  <div class="wrap">
+    <div class="two">
+      <div class="arch arch-mid"><img src="img/patience-plates.jpg" alt="Daar plates reading ‘Patience tastes better’ resting in sand"></div>
+      <div>
+        <p class="eyebrow" style="color:var(--daar-tan)">06 — Story</p>
+        <h2 style="font-size:var(--t-h1);color:var(--daar-cream)">Daar means home</h2>
+        <p style="margin-top:var(--s-5)">Editorial sections run on oxblood with generous margins and a single arched image. Long-form copy stays on bone for readability; oxblood is reserved for moments, not paragraphs.</p>
+        <div class="cta-row" style="margin-top:var(--s-6)"><a class="btn btn-solid" href="#">Read more</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPONENTS ============ -->
+<section class="grain">
+  <div class="wrap">
+    <div class="sec-head"><p class="eyebrow">07 — Components</p><h2>Parts</h2></div>
+    <p class="eyebrow">Buttons</p>
+    <div style="display:flex;gap:var(--s-4);flex-wrap:wrap;align-items:center">
+      <a class="btn btn-dark" href="#">Primary</a>
+      <a class="btn" style="color:var(--daar-oxblood)" href="#">Secondary</a>
+      <a class="btn btn-solid" href="#">On dark</a>
+    </div>
+    <p class="eyebrow" style="margin-top:var(--s-7)">Badges — admin-editable</p>
+    <div class="tags">
+      <span class="tag tag-best">Bestseller</span><span class="tag tag-new">New</span>
+      <span class="tag tag-veg">Vegetarian</span><span class="tag">Vegan</span>
+      <span class="tag">Gluten-free</span><span class="tag">Limited</span><span class="tag">Seasonal</span>
+    </div>
+  </div>
+</section>
+
+<footer class="plaster">
+  <div class="wrap">
+    <div class="mark" style="width:44px"><svg viewBox="0 0 260 400" fill="none" stroke="currentColor" stroke-width="13"><defs><mask id="dc2"><rect width="260" height="400" fill="#fff"/><path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/></mask></defs><g mask="url(#dc2)"><path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/><path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/></g><path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/><path d="M28 386 H88"/><circle cx="168" cy="268" r="7.5" fill="currentColor" stroke="none"/></svg></div>
+    <p class="kicker" style="margin-top:var(--s-4)">Daar &amp; Bakery · Phase 0 style board · not a live site</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,320 @@
+// ============================================================
+//  DAAR Cafe & Bakery — data model
+//  Postgres in dev and prod (same engine everywhere).
+//  Connection URL lives in prisma.config.ts (Prisma 7 convention).
+// ============================================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ------------------------------------------------------------
+//  MENU
+// ------------------------------------------------------------
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String     @unique
+  description  String?
+  displayOrder Int        @default(0)
+  isVisible    Boolean    @default(true)
+  items        MenuItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([displayOrder])
+}
+
+model MenuItem {
+  id          String  @id @default(cuid())
+  name        String
+  slug        String  @unique
+  description String?
+
+  /// Stored in minor units (cents) to avoid float rounding.
+  /// Rendered as whole shillings by default — see src/lib/config.ts
+  priceCents Int
+
+  /// Image lives in blob storage. Dimensions + blur placeholder are
+  /// captured at upload so the menu never shifts layout on a phone.
+  imageUrl    String?
+  imageAlt    String?
+  imageWidth  Int?
+  imageHeight Int?
+  blurDataUrl String?
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  isAvailable  Boolean @default(true)
+  isFeatured   Boolean @default(false) // drives "Chef's Special" on the home page
+  displayOrder Int     @default(0)
+
+  tags  MenuItemTag[]
+  views MenuItemView[]
+  stats DailyItemStat[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId, displayOrder])
+  @@index([isAvailable])
+  @@index([isFeatured])
+}
+
+enum TagKind {
+  DIETARY // vegetarian, vegan, gluten-free
+  BADGE // bestseller, new, seasonal, limited
+}
+
+model Tag {
+  id       String  @id @default(cuid())
+  name     String
+  slug     String  @unique
+  kind     TagKind @default(BADGE)
+  /// Optional hex override; falls back to the design tokens.
+  colorHex String?
+
+  items     MenuItemTag[]
+  createdAt DateTime      @default(now())
+
+  @@index([kind])
+}
+
+model MenuItemTag {
+  menuItemId String
+  tagId      String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, tagId])
+  @@index([tagId])
+}
+
+// ------------------------------------------------------------
+//  ADMIN
+// ------------------------------------------------------------
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  lastLoginAt  DateTime?
+
+  /// --- Two-factor (TOTP) ---
+  /// Base32 shared secret. Present but unconfirmed while setup is in progress;
+  /// only enforced once totpEnabledAt is set.
+  totpSecret    String?
+  totpEnabledAt DateTime?
+  /// Single-use recovery codes, stored hashed. Consumed on use.
+  backupCodes   BackupCode[]
+  resetTokens   PasswordResetToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Single-use, short-lived password reset tokens.
+/// Only a hash is stored — a leaked database row cannot be used to reset.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  adminId   String
+  admin     AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([adminId, createdAt])
+  @@index([expiresAt])
+}
+
+model BackupCode {
+  id        String    @id @default(cuid())
+  adminId   String
+  admin     AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  /// SHA-256 of the code. The plaintext is shown once, at generation.
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([adminId])
+}
+
+// ------------------------------------------------------------
+//  SITE CONTENT — single row, edited from the dashboard
+// ------------------------------------------------------------
+
+model SiteSettings {
+  id String @id @default("singleton")
+
+  heroHeadline String  @default("Patience tastes better")
+  heroSubcopy  String  @default("Proved slowly. Baked the same morning it's served.")
+  heroImageUrl String?
+  heroVideoUrl String?
+
+  storyTitle    String  @default("A door on Ngong Road")
+  storyBody     String  @default("")
+  storyImageUrl String?
+
+  /// Brand artwork uploaded from the dashboard. Takes precedence over any
+  /// file dropped into public/brand/logo/, which in turn beats the traced mark.
+  logoMarkUrl     String?
+  logoWordmarkUrl String?
+
+  addressLine String  @default("Nairobi, Kenya")
+  mapEmbedUrl String?
+  phone       String?
+  whatsapp    String?
+  email       String?
+
+  /// { instagram, tiktok, facebook, ... }
+  socials Json @default("{}")
+
+  /// Single config value so switching currency is a one-line change.
+  currency String @default("KES")
+
+  /// Reservations
+  reservationsEnabled Boolean @default(true)
+  maxPartySize        Int     @default(12)
+  /// Shown above the booking form, e.g. "Groups over 8, please call us."
+  reservationNote     String?
+
+  updatedAt DateTime @updatedAt
+}
+
+model OpeningHours {
+  id        String  @id @default(cuid())
+  /// 0 = Sunday … 6 = Saturday
+  dayOfWeek Int     @unique
+  openTime  String? // "07:00"
+  closeTime String? // "21:00"
+  isClosed  Boolean @default(false)
+}
+
+// ------------------------------------------------------------
+//  RESERVATIONS
+//  Requests, not confirmations — the owner approves each one from
+//  the dashboard, so the café is never double-booked by the website.
+// ------------------------------------------------------------
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model Reservation {
+  id String @id @default(cuid())
+
+  /// Required: enough to hold, confirm and call back about a table.
+  name      String
+  phone     String
+  email     String
+  partySize Int
+  date      DateTime @db.Date
+  time      String // "19:30" — matched against OpeningHours
+
+  /// Optional extras.
+  occasion String?
+  notes    String?
+
+  status      ReservationStatus @default(PENDING)
+  /// Free-text note the owner adds when confirming or declining.
+  adminNote   String?
+  respondedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date, time])
+  @@index([status, date])
+  @@index([createdAt])
+}
+
+// ------------------------------------------------------------
+//  MESSAGES
+//  "Leave us a message" from the public site. Read and answered by the
+//  owner from the dashboard; the site never replies automatically.
+// ------------------------------------------------------------
+
+enum MessageStatus {
+  UNREAD
+  READ
+  ARCHIVED
+}
+
+model Message {
+  id String @id @default(cuid())
+
+  name    String
+  email   String
+  phone   String?
+  subject String?
+  body    String
+
+  status    MessageStatus @default(UNREAD)
+  /// Private note the owner adds after handling it.
+  adminNote String?
+  readAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([createdAt])
+  /// Supports the duplicate-submission guard.
+  @@index([email, createdAt])
+}
+
+// ------------------------------------------------------------
+//  ANALYTICS — aggregate only. No cookies, no visitor identity.
+//  Raw events roll up nightly into DailyItemStat and are then pruned,
+//  so the table cannot grow unbounded on a small VPS.
+// ------------------------------------------------------------
+
+enum ViewSource {
+  MENU
+  HOME
+  DIRECT
+}
+
+model MenuItemView {
+  id         String     @id @default(cuid())
+  menuItemId String
+  menuItem   MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  source     ViewSource @default(MENU)
+  viewedAt   DateTime   @default(now())
+
+  @@index([menuItemId, viewedAt])
+  @@index([viewedAt])
+}
+
+model DailyItemStat {
+  id         String   @id @default(cuid())
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  /// Midnight UTC of the day being counted.
+  date       DateTime @db.Date
+  views      Int      @default(0)
+
+  @@unique([menuItemId, date])
+  @@index([date])
+}
+
+model PageView {
+  id    String   @id @default(cuid())
+  path  String
+  date  DateTime @db.Date
+  views Int      @default(0)
+
+  @@unique([path, date])
+  @@index([date])
+}
