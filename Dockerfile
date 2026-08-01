@@ -52,12 +52,14 @@ COPY --from=build /app/public ./public
 COPY --from=build --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Migrations and the Prisma CLI, so the container can migrate itself on boot.
-COPY --from=build /app/prisma ./prisma
-COPY --from=build /app/prisma.config.ts ./prisma.config.ts
-COPY --from=build /app/node_modules/prisma ./node_modules/prisma
-COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=build /app/node_modules/.bin ./node_modules/.bin
+# The Prisma CLI is deliberately NOT here. Copying `prisma` and `@prisma`
+# into this slim image looks like it should work, but a package needs its
+# whole dependency tree — the CLI failed at boot with "Cannot find module
+# 'effect'". Migrations run in the `migrate` service instead (see
+# docker-compose.yml), which uses the build stage and already has everything.
+#
+# Nothing here needs the CLI: the generated client and its driver adapter are
+# bundled into the standalone output.
 
 RUN mkdir -p /data/uploads && chown -R nextjs:nodejs /data
 VOLUME ["/data"]

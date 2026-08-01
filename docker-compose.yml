@@ -25,12 +25,35 @@ services:
       timeout: 5s
       retries: 5
 
+  # Runs pending migrations, then exits. The app waits for it to succeed.
+  #
+  # Separate from the app because the runtime image is deliberately slim and
+  # has no Prisma CLI — this uses the build stage, which already carries the
+  # full dependency tree. It shares every layer with the app build, so it
+  # costs no extra download.
+  #
+  # `migrate deploy` only applies migrations that already exist. It never
+  # prompts, never generates, and never drops data.
+  migrate:
+    build:
+      context: .
+      target: build
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-daar}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-daar}?schema=public
+    command: npx prisma migrate deploy
+
   app:
     build: .
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-daar}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-daar}?schema=public
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?}
@@ -51,10 +74,7 @@ services:
     volumes:
       # Uploaded photos must outlive the container.
       - uploads:/data/uploads
-    # Apply migrations before serving. `migrate deploy` only runs already-
-    # generated migrations — it never prompts and never drops data.
-    command: >
-      sh -c "npx prisma migrate deploy && node server.js"
+    command: node server.js
 
   caddy:
     image: caddy:2-alpine
