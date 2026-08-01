@@ -13,21 +13,33 @@ import { formatPrice, SITE } from "@/lib/config";
 
 export const revalidate = 60;
 
-/** Pre-render every item at build time; new ones fill in on demand. */
+/**
+ * Pre-render every item at build time; new ones fill in on demand.
+ *
+ * The Docker image is built with no database, so this must not be fatal —
+ * returning [] simply means every page is generated on first request and
+ * then cached, which is the same end state a few seconds later.
+ */
 export async function generateStaticParams() {
-  const items = await db.menuItem.findMany({
-    where: { category: { isVisible: true } },
-    select: { slug: true },
-  });
-  return items.map((i) => ({ slug: i.slug }));
+  try {
+    const items = await db.menuItem.findMany({
+      where: { category: { isVisible: true } },
+      select: { slug: true },
+    });
+    return items.map((i) => ({ slug: i.slug }));
+  } catch {
+    return [];
+  }
 }
 
 const getItem = async (slug: string) =>
-  db.menuItem.findFirst({
-    // Hiding a category must hide its items' pages too, not just the listing.
-    where: { slug, category: { isVisible: true } },
-    include: { category: true, tags: { include: { tag: true } } },
-  });
+  db.menuItem
+    .findFirst({
+      // Hiding a category must hide its items' pages too, not just the listing.
+      where: { slug, category: { isVisible: true } },
+      include: { category: true, tags: { include: { tag: true } } },
+    })
+    .catch(() => null);
 
 export async function generateMetadata({
   params,
@@ -64,27 +76,31 @@ export default async function MenuItemPage({ params }: { params: Promise<{ slug:
 
   // Same category first; if that category is thin, top up from elsewhere so
   // the carousel never renders with one lonely card.
-  const sameCategory = await db.menuItem.findMany({
-    where: { categoryId: item.categoryId, id: { not: item.id }, category: { isVisible: true } },
-    orderBy: [{ isFeatured: "desc" }, { displayOrder: "asc" }],
-    take: 8,
-    include: { category: { select: { name: true } } },
-  });
+  const sameCategory = await db.menuItem
+    .findMany({
+      where: { categoryId: item.categoryId, id: { not: item.id }, category: { isVisible: true } },
+      orderBy: [{ isFeatured: "desc" }, { displayOrder: "asc" }],
+      take: 8,
+      include: { category: { select: { name: true } } },
+    })
+    .catch(() => []);
 
   const filler =
     sameCategory.length >= 4
       ? []
-      : await db.menuItem.findMany({
-          where: {
-            categoryId: { not: item.categoryId },
-            id: { not: item.id },
-            category: { isVisible: true },
-            isAvailable: true,
-          },
-          orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
-          take: 4 - sameCategory.length,
-          include: { category: { select: { name: true } } },
-        });
+      : await db.menuItem
+          .findMany({
+            where: {
+              categoryId: { not: item.categoryId },
+              id: { not: item.id },
+              category: { isVisible: true },
+              isAvailable: true,
+            },
+            orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
+            take: 4 - sameCategory.length,
+            include: { category: { select: { name: true } } },
+          })
+          .catch(() => []);
 
   const similar: SimilarItem[] = [...sameCategory, ...filler].slice(0, 8).map((i) => ({
     id: i.id,
