@@ -212,11 +212,6 @@ export default async function StoryPage() {
                 ))}
             </Reveal>
 
-            {!settings?.phone && !settings?.email && (
-              <p className="mt-6 text-center text-sm text-daar-muted">
-                Contact details are still being set up in the dashboard.
-              </p>
-            )}
 
             {/* ---------- leave us a message ---------- */}
             <Reveal className="mx-auto mt-14 max-w-[720px]">

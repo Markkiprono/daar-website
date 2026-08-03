@@ -136,10 +136,15 @@ export default async function VisitPage() {
                 })}
               </dl>
 
-              <h3 className="mt-12 font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-                Get in touch
-              </h3>
-              <div className="mt-2 text-sm [&>a]:block [&>a]:py-2.5">
+              {/* Whole block, heading included, only when there is something
+                  to show. A "Get in touch" heading over an apology reads like
+                  the place isn't open yet. */}
+              {(settings?.phone || settings?.whatsapp || settings?.email) && (
+                <>
+                  <h3 className="mt-12 font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
+                    Get in touch
+                  </h3>
+                  <div className="mt-2 text-sm [&>a]:block [&>a]:py-2.5">
                 {settings?.phone && (
                   <a href={`tel:${settings.phone.replace(/\s/g, "")}`} className="block hover:text-daar-oxblood">
                     {settings.phone}
@@ -160,10 +165,9 @@ export default async function VisitPage() {
                     {settings.email}
                   </a>
                 )}
-                {!settings?.phone && !settings?.email && (
-                  <p className="text-daar-muted">Contact details coming soon.</p>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
 
               {socials.length > 0 && (
                 <div className="mt-8 flex flex-wrap gap-3">
@@ -253,10 +257,6 @@ export default async function VisitPage() {
                           Get directions
                         </a>
                       </div>
-                      <p className="mt-6 text-xs text-daar-muted">
-                        To show a live map here, paste a Google Maps embed link into
-                        Admin → Settings → Map.
-                      </p>
                     </div>
 
                     <div className="daar-arch relative min-h-[240px] bg-daar-slate">

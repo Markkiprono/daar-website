@@ -45,6 +45,18 @@ const nextConfig: NextConfig = {
     "/**": ["node_modules/@img/**"],
   },
 
+  images: {
+    /**
+     * Next's default ladder ends 2048, 3840. Uploads are capped at 2000px wide
+     * by processMenuImage, so those two produce files byte-identical to the
+     * 1920 one — measured: 1920, 2048 and 3840 all return 124 KB for the same
+     * hero. Dropping them removes variants that cost CPU and cache space to
+     * generate and can never look different, and keeps a future large upload
+     * from quietly shipping a 4K image over Kenyan mobile data.
+     */
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+  },
+
   experimental: {
     /**
      * The admin dashboard is served on its own host and reaches the app
