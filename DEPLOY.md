@@ -105,8 +105,14 @@ terminal and a chat transcript — treat them as public.
 docker compose up -d --build
 ```
 
-The app applies migrations itself on boot (`prisma migrate deploy`), which only
-runs already-generated migrations and never prompts or drops data.
+A one-shot `migrate` service runs `prisma migrate deploy` first, and `app` only
+starts once it has completed successfully — so migrations are always applied
+before any request is served. `migrate deploy` only runs already-generated
+migrations and never prompts or drops data.
+
+The app image deliberately ships without the Prisma CLI, so it cannot run
+migrations itself; the `migrate` service uses the build stage, which has the
+full dependency tree. See the comment in the Dockerfile before moving this.
 
 Watch it come up:
 
