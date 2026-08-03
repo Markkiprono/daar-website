@@ -72,22 +72,22 @@ export function PhotoSlot({
             const okTypes = favicon
               ? ["image/png", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"]
               : ["image/jpeg", "image/png", "image/webp", "image/avif"];
+            // On a bad file, show why and fall back to the current preview.
+            // The file is left selected so the message stays about it.
             if (!okTypes.includes(file.type)) {
               setError(
                 favicon
-                  ? "Please choose a PNG, SVG or ICO icon."
-                  : "That's not an image we can use. Please choose a JPG, PNG or WebP photo.",
+                  ? "That file isn't a PNG, SVG or ICO icon."
+                  : "That file isn't a photo we can use. Please choose a JPG, PNG or WebP.",
               );
-              e.target.value = "";
               setPreview(current);
               return;
             }
             if (file.size > maxMB * 1024 * 1024) {
               setError(
-                `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB, which is too large. ` +
+                `This image is ${(file.size / 1024 / 1024).toFixed(1)} MB — too big to upload. ` +
                   `Please choose one under ${maxMB} MB.`,
               );
-              e.target.value = "";
               setPreview(current);
               return;
             }
@@ -113,9 +113,18 @@ export function PhotoSlot({
         {state?.ok && <p className="rounded-md bg-green-50 px-3 py-2 text-xs text-green-800">{state.message}</p>}
         {state && !state.ok && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{state.error}</p>}
 
-        <Button type="submit" size="sm" disabled={pending || (!preview && !remove)}>
-          {pending ? "Saving…" : "Save"}
-        </Button>
+        <div>
+          <Button type="submit" size="sm" disabled={pending || (!preview && !remove)}>
+            {pending ? "Saving…" : "Save"}
+          </Button>
+          {!pending && !preview && !remove && (
+            <p className="mt-2 text-xs text-neutral-500">
+              {error
+                ? "Choose a different image to enable this."
+                : "Choose an image above to enable this."}
+            </p>
+          )}
+        </div>
       </form>
     </div>
   );
