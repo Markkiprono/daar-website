@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { mapEmbedSrc, isMapEmbed, MAP_EMBED_HELP } from "@/lib/map-embed";
 
 export type SettingsValues = {
   addressLine: string;
@@ -140,6 +141,11 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
     undefined,
   );
 
+  // Drives the live map preview below the embed field.
+  const [mapValue, setMapValue] = useState(values.mapEmbedUrl);
+  const mapIsValid = isMapEmbed(mapValue);
+  const mapSrc = mapEmbedSrc(mapValue);
+
   return (
     <form action={formAction} className="space-y-5 pb-28">
       <Section
@@ -203,26 +209,52 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
             <li>Open Google Maps and search for Daar.</li>
             <li>Click <strong>Share</strong>, then the <strong>Embed a map</strong> tab.</li>
             <li>Click <strong>COPY HTML</strong>.</li>
-            <li>
-              Paste it below — you can paste the whole <code>&lt;iframe…&gt;</code> tag and only the
-              address inside <code>src=&quot;…&quot;</code> is what&apos;s needed, so copy just that part.
-            </li>
+            <li>Paste it below exactly as copied — the whole <code>&lt;iframe…&gt;</code> tag is fine.</li>
           </ol>
-          <p className="mt-2">It should look like: <code>https://www.google.com/maps/embed?pb=…</code></p>
+          <p className="mt-2">
+            The address bar link and the short <code>maps.app.goo.gl</code> share link are
+            different things and won&apos;t work here — it has to come from the
+            <strong> Embed a map</strong> tab.
+          </p>
         </details>
         <div className="space-y-2">
-          <Label htmlFor="mapEmbedUrl">Map embed URL</Label>
+          <Label htmlFor="mapEmbedUrl">Map embed</Label>
           <Textarea
             id="mapEmbedUrl"
             name="mapEmbedUrl"
             defaultValue={values.mapEmbedUrl}
+            onChange={(e) => setMapValue(e.target.value)}
             rows={3}
-            placeholder="https://www.google.com/maps/embed?pb=..."
+            placeholder={'<iframe src="https://www.google.com/maps/embed?pb=..." ...></iframe>'}
             className="font-mono text-xs"
           />
-          <p className="text-xs text-neutral-500">
-            Leave empty to show the address panel with map buttons instead.
-          </p>
+
+          {/* Preview it here rather than making the owner save, open the public
+              site in another tab and scroll to find out whether it was right. */}
+          {mapValue.trim() === "" ? (
+            <p className="text-xs text-neutral-500">
+              Empty — the Visit page shows the address panel with map buttons instead.
+            </p>
+          ) : mapIsValid ? (
+            <div className="space-y-1.5">
+              <div className="overflow-hidden rounded-md border border-neutral-200">
+                <iframe
+                  src={mapSrc}
+                  title="Map preview"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="h-56 w-full border-0"
+                />
+              </div>
+              <p className="text-xs text-green-700">
+                This is exactly what visitors will see on the Visit page.
+              </p>
+            </div>
+          ) : (
+            <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+              {MAP_EMBED_HELP}
+            </p>
+          )}
         </div>
 
         {/* These three go straight into the Restaurant structured data that

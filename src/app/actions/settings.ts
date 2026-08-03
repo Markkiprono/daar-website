@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { assertAdmin } from "@/lib/dal";
 import { getStorage, buildKey } from "@/lib/storage";
 import { processLogo } from "@/lib/logo-upload";
+import { mapEmbedSrc, isMapEmbed, MAP_EMBED_HELP } from "@/lib/map-embed";
 
 export type SettingsState = { ok?: true; error?: string } | undefined;
 
@@ -16,13 +17,12 @@ export type SettingsState = { ok?: true; error?: string } | undefined;
  * anyone who reaches the dashboard embed a page of their choosing inside the
  * site, so the host is pinned. Guests are told exactly where to get the link.
  */
+// Rules live in src/lib/map-embed.ts so the admin preview and this validation
+// apply exactly the same test — see the note there about the pinned host.
 const MapEmbed = z
   .string()
-  .trim()
-  .refine(
-    (v) => v === "" || /^https:\/\/www\.google\.com\/maps\/embed\?/.test(v),
-    "That isn't a Google Maps embed link — it must start with https://www.google.com/maps/embed?",
-  );
+  .transform(mapEmbedSrc)
+  .refine((v) => v === "" || isMapEmbed(v), MAP_EMBED_HELP);
 
 const SettingsSchema = z.object({
   // Contact
