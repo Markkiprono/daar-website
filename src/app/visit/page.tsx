@@ -182,31 +182,21 @@ export default async function VisitPage() {
               )}
             </Reveal>
 
-            {/* ---------- map or photograph ---------- */}
+            {/* ---------- photograph ----------
+                Always the room, never the map. This slot used to swap itself
+                for the map embed, which meant that setting a map rendered the
+                same map twice on this page — here and again in the Location
+                section below — and silently dropped the photograph. */}
             <Reveal>
-              {settings?.mapEmbedUrl ? (
-                <div className="aspect-[4/5] overflow-hidden rounded-[3px] bg-daar-slate">
-                  <iframe
-                    src={settings.mapEmbedUrl}
-                    title={`Map showing ${SITE.name}`}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="h-full w-full border-0"
-                  />
-                </div>
-              ) : (
-                // No map configured yet — show the room rather than an empty
-                // grey box, and let the Maps button above do the navigating.
-                <div className="daar-arch relative aspect-[4/5] bg-daar-slate">
-                  <Image
-                    src={settings?.visitImageUrl ?? "/brand/interior-02.jpg"}
-                    alt="The dining room at Daar"
-                    fill
-                    sizes="(min-width: 1024px) 560px, 92vw"
-                    className="object-cover"
-                  />
-                </div>
-              )}
+              <div className="daar-arch relative aspect-[4/5] bg-daar-slate">
+                <Image
+                  src={settings?.visitImageUrl ?? "/brand/interior-02.jpg"}
+                  alt={`The dining room at ${SITE.name}, ${SITE.area}`}
+                  fill
+                  sizes="(min-width: 1024px) 560px, 92vw"
+                  className="object-cover"
+                />
+              </div>
             </Reveal>
           </div>
         </section>
