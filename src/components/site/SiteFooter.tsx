@@ -74,8 +74,13 @@ export async function SiteFooter({ email, phone }: { email?: string | null; phon
             real protection is the password, two-factor and the DAL checks.
             The admin links out to the site; nothing links back in. */}
 
+        {/* Kept out of the nav row above and sat with the copyright: required
+            to be reachable, but it should not compete with Menu and Visit. */}
         <p className="mt-6 font-[family-name:var(--font-label)] text-[0.7rem] uppercase tracking-[0.18em] opacity-50">
-          © {new Date().getFullYear()} {SITE.name} · by izzi · {SITE.city}
+          © {new Date().getFullYear()} {SITE.name} · {SITE.city} ·{" "}
+          <Link href="/privacy" className="underline underline-offset-4 transition hover:text-daar-tan">
+            Privacy
+          </Link>
         </p>
       </div>
     </footer>
