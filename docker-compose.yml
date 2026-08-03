@@ -38,6 +38,11 @@ services:
     build:
       context: .
       target: build
+      # Same args as app so both share one cached build of this stage —
+      # differing args would fork the cache and build everything twice.
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?}
+        NEXT_PUBLIC_CURRENCY: ${NEXT_PUBLIC_CURRENCY:-KES}
     restart: "no"
     depends_on:
       db:
@@ -47,7 +52,13 @@ services:
     command: npx prisma migrate deploy
 
   app:
-    build: .
+    build:
+      context: .
+      # Build-time copies of the NEXT_PUBLIC_ values: the bundler inlines
+      # them, so handing them only to the running container is too late.
+      args:
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?}
+        NEXT_PUBLIC_CURRENCY: ${NEXT_PUBLIC_CURRENCY:-KES}
     restart: unless-stopped
     depends_on:
       db:

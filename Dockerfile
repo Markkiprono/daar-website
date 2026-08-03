@@ -25,6 +25,16 @@ COPY . .
 # generated inside the image rather than copied in.
 RUN npx prisma generate
 
+# NEXT_PUBLIC_* values are inlined into the bundle AT BUILD TIME, and .env is
+# deliberately not in the build context. Runtime environment cannot fix what
+# the build already baked: with these missing, SITE.url fell back to
+# "http://localhost:3000" in everything prerendered — robots.txt pointed at a
+# localhost sitemap, and structured data carried localhost URLs.
+ARG NEXT_PUBLIC_SITE_URL
+ARG NEXT_PUBLIC_CURRENCY=KES
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_CURRENCY=$NEXT_PUBLIC_CURRENCY
+
 # A DATABASE_URL must exist for the build to typecheck and prerender.
 # It is never connected to — real values arrive at runtime.
 ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
