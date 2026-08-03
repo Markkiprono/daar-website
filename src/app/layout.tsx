@@ -38,30 +38,61 @@ const body = Montserrat({
  * dashboard. It falls back to /favicon.svg — the door mark — when the owner
  * hasn't uploaded one. Wrapped so a database blip never breaks the <head>.
  */
+const HOME_TITLE = `${SITE.name} — ${SITE.descriptor} in ${SITE.area}, ${SITE.city}`;
+const HOME_DESCRIPTION =
+  "Slow-proved bread and pastry, baked the same morning it's served. Café and bakery on the 4th floor of The Mandrake, Westlands, Nairobi.";
+
 export async function generateMetadata(): Promise<Metadata> {
-  let faviconUrl: string | null = null;
-  try {
-    faviconUrl = (await getSettings())?.faviconUrl ?? null;
-  } catch {
-    /* fall back to the bundled default */
-  }
+  const settings = await getSettings().catch(() => null);
+  const heroImage = new URL(
+    settings?.heroImageUrl ?? "/brand/counter.jpg",
+    SITE.url,
+  ).toString();
 
   return {
     metadataBase: new URL(SITE.url),
     title: {
-      default: `${SITE.name} — ${SITE.city}`,
+      default: HOME_TITLE,
+      // Pages set a short title; this appends the brand.
       template: `%s — ${SITE.name}`,
     },
-    description:
-      "Daar Cafe & Bakery, Nairobi. Proved slowly, baked the same morning it's served. Patience tastes better.",
+    description: HOME_DESCRIPTION,
+    applicationName: SITE.name,
+    keywords: [
+      SITE.name,
+      "bakery Westlands",
+      "café Nairobi",
+      "sourdough Nairobi",
+      "brunch Westlands",
+      "The Mandrake Westlands",
+      "celebration cakes Nairobi",
+    ],
+    alternates: { canonical: "/" },
     icons: {
-      icon: faviconUrl ?? "/favicon.svg",
-      apple: faviconUrl ?? "/favicon.svg",
+      icon: settings?.faviconUrl ?? "/favicon.svg",
+      apple: settings?.faviconUrl ?? "/favicon.svg",
     },
     openGraph: {
-      title: `${SITE.name} — ${SITE.city}`,
-      description: SITE.tagline,
       type: "website",
+      siteName: SITE.name,
+      locale: "en_KE",
+      url: SITE.url,
+      title: HOME_TITLE,
+      description: SITE.tagline ? "Proved slowly. Baked the same morning it's served." : HOME_DESCRIPTION,
+      images: [{ url: heroImage, alt: `The counter at ${SITE.name}, ${SITE.area} ${SITE.city}` }],
+    },
+    twitter: {
+      // Was defaulting to a small card: this is why shared links looked bare.
+      card: "summary_large_image",
+      title: HOME_TITLE,
+      description: "Proved slowly. Baked the same morning it's served.",
+      images: [heroImage],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      // Lets Google show a full-width photo of the food rather than a thumbnail.
+      googleBot: { index: true, follow: true, "max-image-preview": "large" },
     },
   };
 }

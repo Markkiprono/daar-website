@@ -14,6 +14,9 @@ export type SettingsValues = {
   whatsapp: string;
   email: string;
   mapEmbedUrl: string;
+  latitude: string;
+  longitude: string;
+  priceRange: string;
   instagram: string;
   tiktok: string;
   facebook: string;
@@ -219,6 +222,38 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
           />
           <p className="text-xs text-neutral-500">
             Leave empty to show the address panel with map buttons instead.
+          </p>
+        </div>
+
+        {/* These three go straight into the Restaurant structured data that
+            builds Google's business panel — they are not shown on the site. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="latitude">Latitude</Label>
+            <Input id="latitude" name="latitude" defaultValue={values.latitude} placeholder="-1.2664" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="longitude">Longitude</Label>
+            <Input id="longitude" name="longitude" defaultValue={values.longitude} placeholder="36.8039" />
+          </div>
+        </div>
+        <p className="-mt-2 text-xs text-neutral-500">
+          Right-click your pin in Google Maps and the first item in the menu is the
+          coordinates — click it to copy, then paste latitude first.
+        </p>
+
+        <div className="space-y-2">
+          <Label htmlFor="priceRange">Price range</Label>
+          <Input
+            id="priceRange"
+            name="priceRange"
+            defaultValue={values.priceRange}
+            maxLength={8}
+            placeholder="$$"
+          />
+          <p className="text-xs text-neutral-500">
+            A band, not a number: $ budget, $$ moderate, $$$ upmarket, $$$$ fine dining.
+            Shown by Google alongside your hours.
           </p>
         </div>
       </Section>

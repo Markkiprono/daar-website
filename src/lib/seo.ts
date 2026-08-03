@@ -26,6 +26,13 @@ type Settings = {
   email: string | null;
   socials: unknown;
   heroImageUrl: string | null;
+  storyImageUrl: string | null;
+  visitImageUrl: string | null;
+  logoWordmarkUrl: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  priceRange: string | null;
+  currency: string;
 } | null;
 
 type Hours = { dayOfWeek: number; openTime: string | null; closeTime: string | null; isClosed: boolean }[];
@@ -65,22 +72,53 @@ export function bakeryJsonLd(settings: Settings, hours: Hours) {
         )
       : [];
 
+  // Every photo we can honestly point at. Google prefers several.
+  const images = [
+    settings?.heroImageUrl ?? "/brand/counter.jpg",
+    settings?.visitImageUrl ?? "/brand/interior-01.jpg",
+    settings?.storyImageUrl ?? "/brand/patience-plates.jpg",
+  ]
+    .map(absolute)
+    .filter((v): v is string => Boolean(v));
+
+  const address = settings?.addressLine ?? SITE.city;
+
   return {
     "@context": "https://schema.org",
-    "@type": "Bakery",
+    // Several types at once: it is a restaurant, a bakery and a coffee shop,
+    // and each one matches a different way people search.
+    "@type": ["Restaurant", "Bakery", "CafeOrCoffeeShop"],
     "@id": `${SITE.url}/#business`,
     name: SITE.name,
+    alternateName: SITE.shortName,
+    description: `${SITE.descriptor} in ${SITE.area}, ${SITE.city}. Slow-proved bread and pastry, baked the same morning it's served.`,
     url: SITE.url,
-    image: absolute(settings?.heroImageUrl ?? "/brand/counter.jpg"),
-    servesCuisine: ["Bakery", "Cafe", "Breakfast", "Coffee"],
+    image: images,
+    ...(settings?.logoWordmarkUrl ? { logo: absolute(settings.logoWordmarkUrl) } : {}),
+    servesCuisine: ["Bakery", "Coffee", "Brunch", "Pastry"],
     address: {
       "@type": "PostalAddress",
-      streetAddress: settings?.addressLine ?? SITE.city,
+      streetAddress: address,
       addressLocality: SITE.city,
+      addressRegion: "Nairobi County",
       addressCountry: "KE",
     },
+    // Coordinates put the pin in the right place; omitted rather than guessed.
+    ...(settings?.latitude && settings?.longitude
+      ? {
+          geo: {
+            "@type": "GeoCoordinates",
+            latitude: settings.latitude,
+            longitude: settings.longitude,
+          },
+        }
+      : {}),
+    hasMap: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${SITE.name} ${address}`)}`,
     ...(settings?.phone ? { telephone: settings.phone } : {}),
     ...(settings?.email ? { email: settings.email } : {}),
+    ...(settings?.priceRange ? { priceRange: settings.priceRange } : {}),
+    currenciesAccepted: settings?.currency ?? "KES",
+    paymentAccepted: "Cash, M-Pesa, Credit Card",
     ...(socials.length ? { sameAs: socials } : {}),
     hasMenu: `${SITE.url}/menu`,
     acceptsReservations: `${SITE.url}/reserve`,
@@ -92,6 +130,19 @@ export function bakeryJsonLd(settings: Settings, hours: Hours) {
         opens: h.openTime,
         closes: h.closeTime,
       })),
+  };
+}
+
+/**
+ * Shared Open Graph / Twitter block. Every page gets a real image that exists,
+ * preferring the owner's uploaded photo and falling back to brand stock, so a
+ * link shared on WhatsApp always shows a picture instead of a bare title.
+ */
+export function socialImage(uploaded: string | null | undefined, fallback: string, alt: string) {
+  const url = absolute(uploaded ?? fallback)!;
+  return {
+    openGraph: { images: [{ url, alt }] },
+    twitter: { images: [url] },
   };
 }
 

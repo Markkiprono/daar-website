@@ -5,15 +5,34 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
 import { ReservationForm } from "@/components/site/ReservationForm";
 import { getSettings, getHours } from "@/lib/menu";
-import { DAY_NAMES } from "@/lib/config";
+import { DAY_NAMES, SITE } from "@/lib/config";
+import { socialImage } from "@/lib/seo";
 
 /** Never cache: opening hours and the on/off switch must take effect at once. */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Reserve a table",
-  description: "Request a table at Daar Cafe & Bakery, Nairobi.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings().catch(() => null);
+  const { openGraph, twitter } = socialImage(
+    settings?.visitImageUrl,
+    "/brand/interior-02.jpg",
+    `The dining room at ${SITE.name}`,
+  );
+
+  return {
+    title: "Reserve a Table",
+    description:
+      "Book a table at Daar by Izzi in Westlands, Nairobi. Tell us when you'd like to come and we'll confirm by phone or WhatsApp.",
+    alternates: { canonical: "/reserve" },
+    openGraph: {
+      ...openGraph,
+      title: `Reserve a Table — ${SITE.name}`,
+      description: "Tell us when you'd like to come.",
+      url: `${SITE.url}/reserve`,
+    },
+    twitter,
+  };
+}
 
 export default async function ReservePage() {
   const [settings, hours] = await Promise.all([getSettings(), getHours()]);

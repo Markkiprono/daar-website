@@ -186,6 +186,13 @@ model SiteSettings {
 
   addressLine String  @default("Nairobi, Kenya")
   mapEmbedUrl String?
+
+  /// Fed straight into the Restaurant structured data, which is what builds
+  /// Google's business panel. Coordinates come from right-clicking the pin in
+  /// Google Maps; priceRange is the "$$" style band, not a number.
+  latitude   String?
+  longitude  String?
+  priceRange String?
   phone       String?
   whatsapp    String?
   email       String?

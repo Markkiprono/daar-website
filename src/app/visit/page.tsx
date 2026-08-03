@@ -6,13 +6,32 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
 import { getSettings, getHours } from "@/lib/menu";
 import { DAY_NAMES, SITE } from "@/lib/config";
+import { socialImage } from "@/lib/seo";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Visit",
-  description: "Find Daar Cafe & Bakery in Nairobi — address, opening hours and contact details.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings().catch(() => null);
+  const { openGraph, twitter } = socialImage(
+    settings?.visitImageUrl,
+    "/brand/interior-01.jpg",
+    `The entrance at ${SITE.name}`,
+  );
+
+  return {
+    title: "Visit",
+    description:
+      "Find Daar by Izzi on the 4th floor of The Mandrake, Westlands, Nairobi. Opening hours, directions, parking and contact details.",
+    alternates: { canonical: "/visit" },
+    openGraph: {
+      ...openGraph,
+      title: `Visit — ${SITE.name}, The Mandrake, Westlands`,
+      description: "4th Floor, The Mandrake, Westlands, Nairobi.",
+      url: `${SITE.url}/visit`,
+    },
+    twitter,
+  };
+}
 
 /** Socials are stored as free-form JSON, so read defensively. */
 function readSocials(value: unknown): { label: string; url: string }[] {

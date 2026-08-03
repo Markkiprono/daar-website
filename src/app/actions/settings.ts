@@ -32,6 +32,12 @@ const SettingsSchema = z.object({
   email: z.string().trim().max(120).optional().or(z.literal("")),
   mapEmbedUrl: MapEmbed.optional().or(z.literal("")),
 
+  // Structured-data only. Bounds are the real limits of each coordinate, so a
+  // transposed pair or a stray character is rejected rather than published.
+  latitude: z.coerce.number().min(-90).max(90).optional().or(z.literal("")),
+  longitude: z.coerce.number().min(-180).max(180).optional().or(z.literal("")),
+  priceRange: z.string().trim().max(8).optional().or(z.literal("")),
+
   // Socials
   instagram: z.string().trim().max(200).optional().or(z.literal("")),
   tiktok: z.string().trim().max(200).optional().or(z.literal("")),
@@ -70,6 +76,9 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
     whatsapp: formData.get("whatsapp") ?? "",
     email: formData.get("email") ?? "",
     mapEmbedUrl: formData.get("mapEmbedUrl") ?? "",
+    latitude: formData.get("latitude") ?? "",
+    longitude: formData.get("longitude") ?? "",
+    priceRange: formData.get("priceRange") ?? "",
     instagram: formData.get("instagram") ?? "",
     tiktok: formData.get("tiktok") ?? "",
     facebook: formData.get("facebook") ?? "",
@@ -132,6 +141,11 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
         whatsapp: d.whatsapp || null,
         email: d.email || null,
         mapEmbedUrl: d.mapEmbedUrl || null,
+        // Stored as text: schema.org wants the string form, and this avoids
+        // a float silently rounding the last decimal off a map pin.
+        latitude: d.latitude === "" || d.latitude === undefined ? null : String(d.latitude),
+        longitude: d.longitude === "" || d.longitude === undefined ? null : String(d.longitude),
+        priceRange: d.priceRange || null,
         socials,
         heroHeadline: d.heroHeadline,
         heroSubcopy: d.heroSubcopy || "",

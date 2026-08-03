@@ -7,14 +7,32 @@ import { Reveal } from "@/components/site/Reveal";
 import { MessageForm } from "@/components/site/MessageForm";
 import { getSettings, getStoryPhotos } from "@/lib/menu";
 import { SITE } from "@/lib/config";
+import { socialImage } from "@/lib/seo";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Story",
-  description:
-    "Daar means home. The story behind Daar Cafe & Bakery in Nairobi — proved slowly, baked the same morning it's served.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings().catch(() => null);
+  const { openGraph, twitter } = socialImage(
+    settings?.storyImageUrl,
+    "/brand/patience-plates.jpg",
+    `Inside the dining room at ${SITE.name}`,
+  );
+
+  return {
+    title: "Our Story",
+    description:
+      "Daar means home. How one room in Westlands became a bakery built on slow proving, long ferments and the belief that patience tastes better.",
+    alternates: { canonical: "/story" },
+    openGraph: {
+      ...openGraph,
+      title: `Our Story — ${SITE.name}`,
+      description: "Daar means home.",
+      url: `${SITE.url}/story`,
+    },
+    twitter,
+  };
+}
 
 export default async function StoryPage() {
   const [settings, galleryPhotos] = await Promise.all([getSettings(), getStoryPhotos()]);

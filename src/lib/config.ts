@@ -30,9 +30,18 @@ export const DAY_NAMES = [
   "Saturday",
 ] as const;
 
+/**
+ * One canonical name, used everywhere. The descriptor goes *after* the name
+ * and never inside it ("Daar by Izzi — Café & Bakery"), so search engines,
+ * the Google Business Profile and social previews all agree on what the
+ * business is called. Three competing variants used to be in circulation.
+ */
 export const SITE = {
-  name: "Daar & Bakery",
+  name: "Daar by Izzi",
+  shortName: "Daar",
+  descriptor: "Café & Bakery",
   tagline: "Patience tastes better",
   city: "Nairobi",
+  area: "Westlands",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
 } as const;

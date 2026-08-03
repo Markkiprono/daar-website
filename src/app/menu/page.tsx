@@ -3,15 +3,33 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { MenuBrowser } from "@/components/site/MenuBrowser";
 import { getMenu, getSettings } from "@/lib/menu";
-import { menuJsonLd, jsonLdString } from "@/lib/seo";
+import { menuJsonLd, jsonLdString, socialImage } from "@/lib/seo";
+import { SITE } from "@/lib/config";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = {
-  title: "Menu",
-  description:
-    "The Daar Cafe & Bakery menu — pastries, coffee, breakfast, lunch and cakes, baked fresh in Nairobi.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings().catch(() => null);
+  const { openGraph, twitter } = socialImage(
+    settings?.heroImageUrl,
+    "/brand/item-tart.jpg",
+    `Pastries on the counter at ${SITE.name}`,
+  );
+
+  return {
+    title: "Menu",
+    description:
+      "Pastries, bread, coffee, breakfast and cakes, baked fresh each morning in Westlands. See what's on the counter today and what's already sold out.",
+    alternates: { canonical: "/menu" },
+    openGraph: {
+      ...openGraph,
+      title: `Menu — ${SITE.name}`,
+      description: "Baked this morning. The counter updates through the day.",
+      url: `${SITE.url}/menu`,
+    },
+    twitter,
+  };
+}
 
 export default async function MenuPage() {
   const [categories, settings] = await Promise.all([getMenu(), getSettings()]);
