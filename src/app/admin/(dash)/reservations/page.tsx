@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/dal";
 import { setReservationStatus, deleteReservation } from "@/app/actions/reservations";
+import { EmailNotice } from "@/components/admin/EmailNotice";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -131,6 +132,8 @@ export default async function AdminReservationsPage() {
             : "Nothing awaiting a response"}
         </p>
       </div>
+
+      <EmailNotice what="bookings" />
 
       <section className="space-y-2">
         <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500">

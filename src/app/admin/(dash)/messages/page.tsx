@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/dal";
 import { setMessageStatus, deleteMessage } from "@/app/actions/messages";
+import { EmailNotice } from "@/components/admin/EmailNotice";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -116,6 +117,8 @@ export default async function AdminMessagesPage() {
           {archived > 0 ? ` · ${archived} archived` : ""}
         </p>
       </div>
+
+      <EmailNotice what="messages" />
 
       <section className="space-y-2">
         <h2 className="text-xs font-medium uppercase tracking-widest text-neutral-500">
