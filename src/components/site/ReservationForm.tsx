@@ -2,17 +2,26 @@
 
 import { useActionState, useMemo, useState } from "react";
 import { createReservation, type ReservationState } from "@/app/actions/reservations";
-import { cafeNow, isSlotBookable, allSlots, LEAD_MINUTES } from "@/lib/time";
+import {
+  cafeNow,
+  isSlotBookable,
+  slotsForDate,
+  weekdayOf,
+  LEAD_MINUTES,
+  type DayHours,
+} from "@/lib/time";
 
 type Props = {
   maxPartySize: number;
   note?: string | null;
   /** Days the café is shut, 0 = Sunday. Blocked in the picker. */
   closedDays: number[];
+  /** Real opening hours, so the offered times match the ones we accept. */
+  hours: DayHours[];
   phone?: string | null;
 };
 
-export function ReservationForm({ maxPartySize, note, closedDays, phone }: Props) {
+export function ReservationForm({ maxPartySize, note, closedDays, hours, phone }: Props) {
   const [state, formAction, pending] = useActionState<ReservationState, FormData>(
     createReservation,
     undefined,
@@ -30,17 +39,23 @@ export function ReservationForm({ maxPartySize, note, closedDays, phone }: Props
   const [chosenDate, setChosenDate] = useState("");
 
   /**
-   * Only offer slots that are still bookable. When the guest picks today,
-   * everything already past (plus the lead time) disappears from the list.
-   * The server re-checks this — the page may have been open for hours.
+   * Slots come from the opening hours for the chosen day, so a Friday that
+   * runs to 23:45 offers late tables and no day offers one before opening.
+   * When the guest picks today, everything already past (plus the lead time)
+   * drops out. The server re-checks both — the page may have been open for
+   * hours, and this list is only a convenience.
    */
   const times = useMemo(() => {
+    if (!chosenDate) return [];
     const now = cafeNow();
-    return allSlots().filter((t) => !chosenDate || isSlotBookable(chosenDate, t, now));
-  }, [chosenDate]);
+    return slotsForDate(chosenDate, hours).filter((t) => isSlotBookable(chosenDate, t, now));
+  }, [chosenDate, hours]);
 
   const isToday = chosenDate === cafeNow().date;
-  const noSlotsLeft = chosenDate !== "" && times.length === 0;
+  // An empty list means two different things, and saying the wrong one sends
+  // people away: shut all day, or today's remaining slots have passed.
+  const isClosedDay = chosenDate !== "" && closedDays.includes(weekdayOf(chosenDate));
+  const noSlotsLeft = chosenDate !== "" && !isClosedDay && times.length === 0;
 
   if (state?.ok) {
     return (
@@ -144,11 +159,17 @@ export function ReservationForm({ maxPartySize, note, closedDays, phone }: Props
             name="time"
             required
             defaultValue=""
-            disabled={chosenDate === "" || noSlotsLeft}
+            disabled={chosenDate === "" || noSlotsLeft || isClosedDay}
             className={`${field} disabled:cursor-not-allowed disabled:bg-daar-cream/40 disabled:text-daar-muted`}
           >
             <option value="" disabled>
-              {chosenDate === "" ? "Pick a date first" : noSlotsLeft ? "None left today" : "Choose…"}
+              {chosenDate === ""
+                ? "Pick a date first"
+                : isClosedDay
+                  ? "Closed that day"
+                  : noSlotsLeft
+                    ? "None left today"
+                    : "Choose…"}
             </option>
             {times.map((t) => (
               <option key={t} value={t}>
@@ -172,7 +193,11 @@ export function ReservationForm({ maxPartySize, note, closedDays, phone }: Props
         </div>
       </div>
 
-      {noSlotsLeft ? (
+      {isClosedDay ? (
+        <p className="rounded-[3px] bg-daar-cream/60 px-4 py-3 text-sm text-daar-muted">
+          We&apos;re closed that day — please choose another.
+        </p>
+      ) : noSlotsLeft ? (
         <p className="rounded-[3px] bg-daar-cream/60 px-4 py-3 text-sm text-daar-muted">
           We&apos;re done taking bookings for today — please choose tomorrow or later.
         </p>

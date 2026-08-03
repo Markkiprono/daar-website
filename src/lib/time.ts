@@ -58,12 +58,57 @@ export function isSlotBookable(date: string, time: string, now = cafeNow()): boo
   return slot >= now.minutes + LEAD_MINUTES;
 }
 
-/** Half-hour slots across the café's widest possible opening span. */
-export function allSlots(from = 7, to = 21): string[] {
+/** 1170 -> "19:30". */
+export function fromMinutes(total: number): string {
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/** No booking is taken this close to closing time. */
+export const LAST_SEATING_MINUTES = 30;
+
+/** A day's opening hours as stored on OpeningHours. */
+export type DayHours = {
+  dayOfWeek: number;
+  openTime: string | null;
+  closeTime: string | null;
+  isClosed: boolean;
+};
+
+/** The weekday (0 = Sunday) for a "YYYY-MM-DD" string, read in UTC so the
+ *  visitor's own timezone cannot shift it onto the wrong day. */
+export function weekdayOf(date: string): number {
+  return new Date(`${date}T00:00:00Z`).getUTCDay();
+}
+
+/**
+ * Half-hour slots for one day, derived from that day's actual opening hours.
+ *
+ * Previously the form offered a fixed 07:00–21:30 that ignored OpeningHours
+ * entirely, so it took bookings before opening — which the server then
+ * rejected — while refusing late ones on the nights the café is open latest.
+ *
+ * Times that do not span a day are treated as "no slots" rather than guessed
+ * at: hours are stored as same-day "HH:MM", so a closing time before the
+ * opening one is bad data, not a night that runs past midnight.
+ */
+export function slotsForHours(openTime: string | null, closeTime: string | null): string[] {
+  if (!openTime || !closeTime) return [];
+
+  const open = toMinutes(openTime);
+  const lastSeating = toMinutes(closeTime) - LAST_SEATING_MINUTES;
+  if (Number.isNaN(open) || Number.isNaN(lastSeating) || lastSeating < open) return [];
+
   const out: string[] = [];
-  for (let h = from; h <= to; h++) {
-    out.push(`${String(h).padStart(2, "0")}:00`);
-    out.push(`${String(h).padStart(2, "0")}:30`);
-  }
+  // Start on the first :00 or :30 at or after opening.
+  for (let m = Math.ceil(open / 30) * 30; m <= lastSeating; m += 30) out.push(fromMinutes(m));
   return out;
+}
+
+/** Slots for a specific date, or [] when the café is shut that day. */
+export function slotsForDate(date: string, hours: DayHours[]): string[] {
+  const day = hours.find((h) => h.dayOfWeek === weekdayOf(date));
+  if (!day || day.isClosed) return [];
+  return slotsForHours(day.openTime, day.closeTime);
 }

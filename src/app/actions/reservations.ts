@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { assertAdmin } from "@/lib/dal";
-import { cafeNow, isSlotBookable, LEAD_MINUTES } from "@/lib/time";
+import { cafeNow, isSlotBookable, slotsForHours, LEAD_MINUTES } from "@/lib/time";
 import { notifyOwner } from "@/lib/email";
 import { ReservationStatus } from "@/generated/prisma/client";
 
@@ -111,10 +111,14 @@ export async function createReservation(
   if (hours?.isClosed) {
     return { ok: false, error: "We're closed that day — please pick another." };
   }
-  if (hours?.openTime && hours?.closeTime && (d.time < hours.openTime || d.time > hours.closeTime)) {
+  // Checked against the very slots the form offers, so the two can't disagree
+  // — a string compare against closeTime alone accepted a table booked for the
+  // exact minute of closing.
+  const slots = slotsForHours(hours?.openTime ?? null, hours?.closeTime ?? null);
+  if (slots.length > 0 && !slots.includes(d.time)) {
     return {
       ok: false,
-      error: `That day we're open ${hours.openTime}–${hours.closeTime}. Please choose a time in between.`,
+      error: `That day we're open ${hours!.openTime}–${hours!.closeTime}, and the last table is ${slots.at(-1)}. Please choose another time.`,
     };
   }
 

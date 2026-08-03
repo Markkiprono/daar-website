@@ -65,6 +65,12 @@ export default async function ReservePage() {
                 maxPartySize={settings?.maxPartySize ?? 12}
                 note={settings?.reservationNote}
                 closedDays={closedDays}
+                hours={hours.map((h) => ({
+                  dayOfWeek: h.dayOfWeek,
+                  openTime: h.openTime,
+                  closeTime: h.closeTime,
+                  isClosed: h.isClosed,
+                }))}
                 phone={settings?.phone}
               />
             ) : (
