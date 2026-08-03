@@ -6,6 +6,7 @@ import { getLogo } from "@/lib/logo";
 import { BrandMark } from "@/components/site/BrandMark";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { Button } from "@/components/ui/button";
+import { SITE } from "@/lib/config";
 
 /**
  * Every authenticated admin route nests under here, so the real
@@ -41,14 +42,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </Link>
 
           <div className="flex items-center gap-2">
-            <Link
-              href="/"
+            {/* An absolute URL, not "/": the dashboard is served from its own
+                host, where the proxy maps "/" back onto /admin — so a relative
+                link reopened the dashboard instead of the website. This is now
+                the only route between the two, since the public footer no
+                longer links here. */}
+            <a
+              href={SITE.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden rounded-full border border-neutral-200 px-3.5 py-1.5 text-xs text-neutral-600 transition hover:border-[#481819] hover:text-[#481819] sm:inline-block"
+              className="rounded-full border border-neutral-200 px-3.5 py-1.5 text-xs text-neutral-600 transition hover:border-[#481819] hover:text-[#481819]"
             >
-              View site ↗
-            </Link>
+              Daar by Izzi website ↗
+            </a>
             <span className="hidden text-xs text-neutral-400 md:inline">{session.email}</span>
             <form action={logout}>
               <Button type="submit" variant="ghost" size="sm">

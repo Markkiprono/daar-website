@@ -66,18 +66,13 @@ export async function SiteFooter({ email, phone }: { email?: string | null; phon
           </div>
         )}
 
-        {/* Staff entry point. Not a security measure — admin.daarbyizzi.com
-            becomes public the moment its TLS certificate is issued, since
-            certificate transparency logs are searchable. The real protection
-            is the password, two-factor and the DAL checks. */}
-        <p className="mt-6">
-          <a
-            href={`https://${process.env.ADMIN_HOST ?? "admin.daarbyizzi.com"}`}
-            className="font-[family-name:var(--font-label)] text-[0.65rem] uppercase tracking-[0.18em] opacity-40 transition hover:text-daar-tan hover:opacity-100"
-          >
-            Staff login
-          </a>
-        </p>
+        {/* No staff entry point here by choice: this is a customer-facing
+            page and the admin is reached at its own host, which staff
+            bookmark. Removing the link is presentation, not security —
+            admin.daarbyizzi.com is discoverable through certificate
+            transparency logs the moment its TLS certificate is issued. The
+            real protection is the password, two-factor and the DAL checks.
+            The admin links out to the site; nothing links back in. */}
 
         <p className="mt-6 font-[family-name:var(--font-label)] text-[0.7rem] uppercase tracking-[0.18em] opacity-50">
           © {new Date().getFullYear()} {SITE.name} · by izzi · {SITE.city}
