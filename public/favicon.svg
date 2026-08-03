@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 400">
+  <rect width="260" height="400" fill="#481819"/>
+  <g fill="none" stroke="#d2af8a" stroke-width="15">
+    <mask id="c">
+      <rect width="260" height="400" fill="#fff"/>
+      <path d="M88 392 V182 A54 54 0 0 1 196 182 V392 Z" fill="#000"/>
+    </mask>
+    <g mask="url(#c)">
+      <path d="M88 386 V118 A72 72 0 0 1 232 118 V386"/>
+      <path d="M28 386 V200 A48 48 0 0 1 124 200 V386"/>
+    </g>
+    <path d="M88 386 V182 A54 54 0 0 1 196 182 V386"/>
+    <path d="M28 386 H88"/>
+    <circle cx="168" cy="268" r="8" fill="#d2af8a" stroke="none"/>
+  </g>
+</svg>

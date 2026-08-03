@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
 import { MessageForm } from "@/components/site/MessageForm";
-import { getSettings } from "@/lib/menu";
+import { getSettings, getStoryPhotos } from "@/lib/menu";
 import { SITE } from "@/lib/config";
 
 export const revalidate = 60;
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default async function StoryPage() {
-  const settings = await getSettings();
+  const [settings, galleryPhotos] = await Promise.all([getSettings(), getStoryPhotos()]);
 
   // All prose comes from the dashboard. Paragraphs split on blank lines, so
   // the owner controls the whole page without touching code.
@@ -25,6 +25,17 @@ export default async function StoryPage() {
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
+
+  // Owner's gallery when set, otherwise the default brand photography.
+  const gallery =
+    galleryPhotos.length > 0
+      ? galleryPhotos.map((p) => ({ src: p.imageUrl, alt: p.imageAlt ?? "A photo of Daar", blur: p.blurDataUrl }))
+      : [
+          { src: "/brand/atmos-02.jpg", alt: "A guest on the red banquette at Daar", blur: null },
+          { src: "/brand/counter.jpg", alt: "Daar packaging on a paint-marbled table", blur: null },
+          { src: "/brand/terrace-drink.jpg", alt: "An iced drink on the terrace", blur: null },
+          { src: "/brand/interior-02.jpg", alt: "The dining room at Daar", blur: null },
+        ];
 
   return (
     <>
@@ -102,12 +113,7 @@ export default async function StoryPage() {
         <section className="px-5 py-20">
           <div className="mx-auto max-w-[1240px]">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-              {[
-                { src: "/brand/atmos-02.jpg", alt: "A guest on the red banquette at Daar" },
-                { src: "/brand/counter.jpg", alt: "Daar packaging on a paint-marbled table" },
-                { src: "/brand/terrace-drink.jpg", alt: "An iced drink on the terrace" },
-                { src: "/brand/interior-02.jpg", alt: "The dining room at Daar" },
-              ].map((img, i) => (
+              {gallery.map((img, i) => (
                 <Reveal key={img.src} delay={i * 90}>
                   <div className="daar-arch relative aspect-[3/4] bg-daar-slate">
                     <Image
@@ -116,6 +122,7 @@ export default async function StoryPage() {
                       fill
                       sizes="(min-width: 768px) 280px, 45vw"
                       className="object-cover"
+                      {...(img.blur ? { placeholder: "blur" as const, blurDataURL: img.blur } : {})}
                     />
                   </div>
                 </Reveal>

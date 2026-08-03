@@ -71,7 +71,7 @@ export default async function ReservePage() {
           <Reveal>
             <div className="daar-arch relative aspect-[3/4] bg-daar-slate">
               <Image
-                src="/brand/interior-01.jpg"
+                src={settings?.visitImageUrl ?? "/brand/interior-01.jpg"}
                 alt="The dining room at Daar"
                 fill
                 sizes="(min-width: 1024px) 480px, 92vw"

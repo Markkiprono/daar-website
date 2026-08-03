@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Jost, Montserrat } from "next/font/google";
 import { SITE } from "@/lib/config";
+import { getSettings } from "@/lib/menu";
 import "./globals.css";
 
 /**
@@ -32,20 +33,38 @@ const body = Montserrat({
   weight: ["300", "400", "500", "600"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE.url),
-  title: {
-    default: `${SITE.name} — ${SITE.city}`,
-    template: `%s — ${SITE.name}`,
-  },
-  description:
-    "Daar Cafe & Bakery, Nairobi. Proved slowly, baked the same morning it's served. Patience tastes better.",
-  openGraph: {
-    title: `${SITE.name} — ${SITE.city}`,
-    description: SITE.tagline,
-    type: "website",
-  },
-};
+/**
+ * Metadata is generated (not static) so the favicon can come from the
+ * dashboard. It falls back to /favicon.svg — the door mark — when the owner
+ * hasn't uploaded one. Wrapped so a database blip never breaks the <head>.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  let faviconUrl: string | null = null;
+  try {
+    faviconUrl = (await getSettings())?.faviconUrl ?? null;
+  } catch {
+    /* fall back to the bundled default */
+  }
+
+  return {
+    metadataBase: new URL(SITE.url),
+    title: {
+      default: `${SITE.name} — ${SITE.city}`,
+      template: `%s — ${SITE.name}`,
+    },
+    description:
+      "Daar Cafe & Bakery, Nairobi. Proved slowly, baked the same morning it's served. Patience tastes better.",
+    icons: {
+      icon: faviconUrl ?? "/favicon.svg",
+      apple: faviconUrl ?? "/favicon.svg",
+    },
+    openGraph: {
+      title: `${SITE.name} — ${SITE.city}`,
+      description: SITE.tagline,
+      type: "website",
+    },
+  };
+}
 
 export default function RootLayout({
   children,

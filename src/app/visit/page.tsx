@@ -180,7 +180,7 @@ export default async function VisitPage() {
                 // grey box, and let the Maps button above do the navigating.
                 <div className="daar-arch relative aspect-[4/5] bg-daar-slate">
                   <Image
-                    src="/brand/interior-02.jpg"
+                    src={settings?.visitImageUrl ?? "/brand/interior-02.jpg"}
                     alt="The dining room at Daar"
                     fill
                     sizes="(min-width: 1024px) 560px, 92vw"

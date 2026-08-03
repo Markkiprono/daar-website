@@ -64,6 +64,12 @@ export const getHours = cache(async () => {
     .catch(survive("getHours", [] as never[]));
 });
 
+export const getStoryPhotos = cache(async () => {
+  return db.storyPhoto
+    .findMany({ orderBy: { displayOrder: "asc" } })
+    .catch(survive("getStoryPhotos", [] as never[]));
+});
+
 /**
  * Category tiles need a photograph. Rather than adding another upload the
  * owner has to manage, we borrow the first item in the category that has

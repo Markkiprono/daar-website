@@ -164,6 +164,12 @@ model SiteSettings {
   storyBody     String  @default("")
   storyImageUrl String?
 
+  /// Photo on the Visit and Reserve pages.
+  visitImageUrl String?
+
+  /// Browser-tab icon. Falls back to the door mark when unset.
+  faviconUrl String?
+
   /// Brand artwork uploaded from the dashboard. Takes precedence over any
   /// file dropped into public/brand/logo/, which in turn beats the traced mark.
   logoMarkUrl     String?
@@ -197,6 +203,18 @@ model OpeningHours {
   openTime  String? // "07:00"
   closeTime String? // "21:00"
   isClosed  Boolean @default(false)
+}
+
+/// The photo grid on the Story page. Editable from the dashboard.
+model StoryPhoto {
+  id           String   @id @default(cuid())
+  imageUrl     String
+  imageAlt     String?
+  blurDataUrl  String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([displayOrder])
 }
 
 // ------------------------------------------------------------
