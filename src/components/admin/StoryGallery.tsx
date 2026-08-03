@@ -1,31 +1,18 @@
 "use client";
 
-import { useActionState, useRef, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { addStoryPhoto, deleteStoryPhoto, moveStoryPhoto, type PhotoState } from "@/app/actions/site-photos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { rejectionReason, MAX_PHOTO_MB } from "@/lib/image-rules";
 
 type Photo = { id: string; imageUrl: string; imageAlt: string | null };
 
-const MAX_MB = 12;
-const OK_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const MAX_MB = MAX_PHOTO_MB;
 
 export function StoryGallery({ photos }: { photos: Photo[] }) {
   const [state, formAction, pending] = useActionState<PhotoState, FormData>(addStoryPhoto, undefined);
-  const formRef = useRef<HTMLFormElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (state?.ok) {
-      formRef.current?.reset();
-      setPreview(null);
-      setFileError(null);
-      setReady(false);
-    }
-  }, [state?.ok]);
 
   return (
     <div className="space-y-5">
@@ -69,7 +56,46 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
         </p>
       )}
 
-      <form ref={formRef} action={formAction} className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4">
+      {/* Keyed on the gallery contents: a successful add changes it, React
+          remounts this subtree, and the picked file, preview and any message
+          clear themselves. Resetting that state in an effect instead is what
+          the react-hooks/set-state-in-effect rule warns about. */}
+      <AddPhotoForm key={photos.length} formAction={formAction} pending={pending} state={state} />
+    </div>
+  );
+}
+
+function AddPhotoForm({
+  formAction,
+  pending,
+  state,
+}: {
+  formAction: (formData: FormData) => void;
+  pending: boolean;
+  state: PhotoState;
+}) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  return (
+    <>
+      <form
+        action={formAction}
+        // The real gate. The change handler below is a convenience that gives
+        // early feedback; this runs no matter what, so a bad file can never be
+        // submitted even if that handler never fired.
+        onSubmit={(e) => {
+          const input = e.currentTarget.elements.namedItem("photo") as HTMLInputElement | null;
+          const file = input?.files?.[0];
+          const reason = file ? rejectionReason(file) : "Choose a photo first.";
+          if (reason) {
+            e.preventDefault();
+            setFileError(reason);
+            setPreview(null);
+          }
+        }}
+        className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4"
+      >
         <h3 className="text-sm font-medium">Add a photo</h3>
 
         {preview && (
@@ -81,10 +107,11 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
 
         <div className="space-y-2">
           <Label htmlFor="gallery-photo">Image</Label>
-          {/* A RAW <input type="file"> — not the shadcn <Input>, which wraps a
-              Base UI primitive that doesn't forward a file input's native
-              onChange. Through that component the handler never fired, so no
-              preview or error appeared and the button stayed disabled. */}
+          {/* A raw <input type="file"> rather than the shadcn <Input>, whose
+              file:* styling is tuned for the short controls elsewhere on this
+              form. (An earlier note here claimed the Base UI primitive behind
+              <Input> swallows a file input's onChange — it does not; the
+              handler is chained through. Either element works.) */}
           <input
             id="gallery-photo"
             name="photo"
@@ -95,26 +122,19 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
             onChange={(e) => {
               const file = e.target.files?.[0];
               setFileError(null);
-              setReady(false);
               setPreview(null);
               if (!file) return;
 
-              // Validate HERE — before it reaches the server, where an
-              // oversized upload fails at the framework level and shows a
-              // scary error page instead of a message. The chosen file is
-              // left in place so the explanation below stays about it.
-              if (!OK_TYPES.includes(file.type)) {
-                setFileError("This file isn’t a photo. Please choose a JPG, PNG or WebP.");
-                return;
-              }
-              if (file.size > MAX_MB * 1024 * 1024) {
-                setFileError(
-                  `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${MAX_MB} MB limit. Please choose a smaller photo.`,
-                );
+              // Early feedback before the upload is attempted, so an oversized
+              // file never reaches the server, where it blows the request body
+              // limit and produces an error page instead of a message.
+              const reason = rejectionReason(file);
+              if (reason) {
+                setFileError(reason);
+                e.target.value = "";
                 return;
               }
               setPreview(URL.createObjectURL(file));
-              setReady(true);
             }}
           />
           <p className="text-xs text-neutral-500">JPG, PNG or WebP · up to {MAX_MB} MB.</p>
@@ -125,8 +145,9 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
           <Input id="gallery-alt" name="alt" maxLength={120} placeholder="e.g. The counter at Daar" />
         </div>
 
-        {/* The red error is the reason the button is disabled — no separate
-            helper line, which only added noise when a file was already chosen. */}
+        {/* The red error is the reason the button is disabled. The button is
+            never disabled without one of these on screen — a greyed-out button
+            with no explanation is indistinguishable from a broken page. */}
         {fileError && (
           <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {fileError}
@@ -135,10 +156,10 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
         {state?.ok && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{state.message}</p>}
         {state && !state.ok && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
 
-        <Button type="submit" disabled={pending || !ready}>
+        <Button type="submit" disabled={pending || fileError !== null}>
           {pending ? "Uploading…" : "Add to gallery"}
         </Button>
       </form>
-    </div>
+    </>
   );
 }

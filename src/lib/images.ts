@@ -1,8 +1,11 @@
 import "server-only";
 import sharp from "sharp";
+import { MAX_PHOTO_MB, PHOTO_TYPES } from "./image-rules";
 
-export const MAX_UPLOAD_BYTES = 12 * 1024 * 1024; // 12 MB — camera originals are big
-export const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+// Derived from the shared rules so the browser and the server can never
+// disagree about what counts as an acceptable upload.
+export const MAX_UPLOAD_BYTES = MAX_PHOTO_MB * 1024 * 1024;
+export const ACCEPTED_TYPES = PHOTO_TYPES;
 
 export type ProcessedImage = {
   buffer: Buffer;

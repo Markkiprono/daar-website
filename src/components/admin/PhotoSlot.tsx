@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { updateSitePhoto, updateFavicon, type PhotoState } from "@/app/actions/site-photos";
 import { Button } from "@/components/ui/button";
+import { rejectionReason } from "@/lib/image-rules";
 
 /**
  * A single replaceable site photo (hero, story, visit) or the favicon.
@@ -33,14 +34,30 @@ export function PhotoSlot({
   const accept = favicon
     ? "image/png,image/svg+xml,image/x-icon,.ico"
     : "image/jpeg,image/png,image/webp,image/avif";
-  const maxMB = favicon ? 1 : 12;
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-4">
       <h3 className="text-sm font-medium">{title}</h3>
       <p className="mt-1 text-xs text-neutral-500">{description}</p>
 
-      <form action={formAction} className="mt-4 space-y-3">
+      <form
+        action={formAction}
+        // The real gate — runs even if the change handler below never did.
+        onSubmit={(e) => {
+          if (remove) return; // restoring the default needs no file
+          const input = e.currentTarget.elements.namedItem("photo") as HTMLInputElement | null;
+          const file = input?.files?.[0];
+          const reason = file
+            ? rejectionReason(file, favicon)
+            : `Choose ${favicon ? "an icon" : "a photo"} first.`;
+          if (reason) {
+            e.preventDefault();
+            setError(reason);
+            setPreview(current);
+          }
+        }}
+        className="mt-4 space-y-3"
+      >
         <input type="hidden" name="slot" value={slot} />
 
         {preview && !remove ? (
@@ -66,27 +83,15 @@ export function PhotoSlot({
               setPreview(current);
               return;
             }
-            // Catch bad files in the browser. An oversized upload fails at the
-            // framework level before any server code runs, which would show a
-            // blank error page rather than a message the owner can act on.
-            const okTypes = favicon
-              ? ["image/png", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"]
-              : ["image/jpeg", "image/png", "image/webp", "image/avif"];
-            // On a bad file, show why and fall back to the current preview.
-            // The file is left selected so the message stays about it.
-            if (!okTypes.includes(file.type)) {
-              setError(
-                favicon
-                  ? "This file isn’t a PNG, SVG or ICO icon."
-                  : "This file isn’t a photo. Please choose a JPG, PNG or WebP.",
-              );
-              setPreview(current);
-              return;
-            }
-            if (file.size > maxMB * 1024 * 1024) {
-              setError(
-                `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${maxMB} MB limit. Please choose a smaller ${favicon ? "icon" : "photo"}.`,
-              );
+            // Early feedback before the upload is attempted. The file MUST be
+            // cleared on rejection: leaving it attached let Save submit it
+            // anyway, and a file past the proxy's body limit killed the request
+            // mid-form — the owner got a server error page instead of the
+            // warning that was sitting right there.
+            const reason = rejectionReason(file, favicon);
+            if (reason) {
+              setError(reason);
+              e.target.value = "";
               setPreview(current);
               return;
             }
@@ -101,7 +106,12 @@ export function PhotoSlot({
               type="checkbox"
               name="remove"
               checked={remove}
-              onChange={(e) => setRemove(e.target.checked)}
+              // Clearing the error too: a rejected file otherwise leaves Save
+              // disabled with no way to fall back to the default photo.
+              onChange={(e) => {
+                setRemove(e.target.checked);
+                setError(null);
+              }}
               className="h-4 w-4 accent-[#481819]"
             />
             Remove and use the default
@@ -112,7 +122,8 @@ export function PhotoSlot({
         {state?.ok && <p className="rounded-md bg-green-50 px-3 py-2 text-xs text-green-800">{state.message}</p>}
         {state && !state.ok && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{state.error}</p>}
 
-        <Button type="submit" size="sm" disabled={pending || (!preview && !remove)}>
+        {/* Disabled only while a red message above says why — never silently. */}
+        <Button type="submit" size="sm" disabled={pending || error !== null}>
           {pending ? "Saving…" : "Save"}
         </Button>
       </form>

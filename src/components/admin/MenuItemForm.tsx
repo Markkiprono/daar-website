@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { rejectionReason, MAX_PHOTO_MB } from "@/lib/image-rules";
 
 type Option = { id: string; name: string };
 type TagOption = Option & { kind: string };
@@ -42,7 +43,7 @@ export function MenuItemForm({
   const [preview, setPreview] = useState<string | null>(values?.imageUrl ?? null);
   const [fileError, setFileError] = useState<string | null>(null);
 
-  const MAX_MB = 12;
+  const MAX_MB = MAX_PHOTO_MB;
 
   const dietary = tags.filter((t) => t.kind === "DIETARY");
   const badges = tags.filter((t) => t.kind === "BADGE");
@@ -123,13 +124,17 @@ export function MenuItemForm({
           capture="environment"
           onChange={(e) => {
             const file = e.target.files?.[0];
-            // Catch oversized files here. Past the server's body limit the
-            // request is rejected before the action runs, which surfaces as
-            // an unexplained error page instead of a usable message.
-            if (file && file.size > MAX_MB * 1024 * 1024) {
-              setFileError(
-                `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${MAX_MB} MB. Try a smaller one.`,
-              );
+            // Reject bad files here, before they can be submitted. The server
+            // rejects them too, but only after the whole file has uploaded —
+            // and past the body limit the request dies before the action runs,
+            // which surfaces as an unexplained error page instead of a message.
+            // On a bad file the selection is cleared so there is nothing left
+            // to upload, and the red warning below disables Save.
+            // `accept` only filters the picker — it is bypassed by choosing
+            // "All files", and phones hand over HEIC that sharp cannot read.
+            const reason = file ? rejectionReason(file) : null;
+            if (reason) {
+              setFileError(reason);
               e.target.value = "";
               setPreview(values?.imageUrl ?? null);
               return;
@@ -143,9 +148,18 @@ export function MenuItemForm({
           {values?.imageUrl ? " Leave empty to keep the current photo." : ""}
         </p>
         {fileError ? (
-          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-            {fileError}
-          </p>
+          <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p>{fileError}</p>
+            {/* The photo is optional, so the disabled Save below must not trap
+                anyone who only wanted to fix the other fields. */}
+            <button
+              type="button"
+              onClick={() => setFileError(null)}
+              className="mt-1 underline underline-offset-2"
+            >
+              Continue without a photo
+            </button>
+          </div>
         ) : null}
 
         {preview ? (
@@ -227,7 +241,7 @@ export function MenuItemForm({
         </p>
       ) : null}
 
-      <Button type="submit" disabled={pending} className="h-12 w-full text-base">
+      <Button type="submit" disabled={pending || fileError !== null} className="h-12 w-full text-base">
         {pending ? "Saving…" : submitLabel}
       </Button>
     </form>
