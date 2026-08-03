@@ -3,6 +3,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { MenuBrowser } from "@/components/site/MenuBrowser";
 import { getMenu, getSettings } from "@/lib/menu";
+import { menuJsonLd, jsonLdString } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -18,6 +19,12 @@ export default async function MenuPage() {
 
   return (
     <>
+      {/* The full menu as structured data — item names, prices and photos,
+          eligible for menu rich results on searches like "menus in Nairobi". */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString(menuJsonLd(withItems)) }}
+      />
       <SiteHeader solid />
 
       <section className="daar-tex daar-tex-dark bg-daar-ink px-5 pb-14 pt-20 text-center text-daar-cream">

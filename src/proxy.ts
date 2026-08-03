@@ -32,8 +32,15 @@ export default function proxy(request: NextRequest) {
   }
 
   if (onAdminHost) {
+    // The admin host is discoverable (TLS certificates are public record), so
+    // tell search engines not to list it. Every admin response carries this.
+    const noindex = (res: NextResponse) => {
+      res.headers.set("X-Robots-Tag", "noindex, nofollow");
+      return res;
+    };
+
     // Static assets and API routes pass through untouched.
-    if (pathname.startsWith("/api")) return NextResponse.next();
+    if (pathname.startsWith("/api")) return noindex(NextResponse.next());
 
     // Map the admin host's root onto the /admin route group.
     const internal = pathname.startsWith("/admin") ? pathname : `/admin${pathname === "/" ? "" : pathname}`;
@@ -49,14 +56,14 @@ export default function proxy(request: NextRequest) {
     if (!hasCookie && !isPublicAdmin) {
       const url = new URL("/admin/login", request.url);
       if (pathname !== "/") url.searchParams.set("next", pathname);
-      return NextResponse.rewrite(url);
+      return noindex(NextResponse.rewrite(url));
     }
     // Already signed in? Skip login, but allow /reset so a link still works.
     if (hasCookie && internal === "/admin/login") {
-      return NextResponse.rewrite(new URL("/admin", request.url));
+      return noindex(NextResponse.rewrite(new URL("/admin", request.url)));
     }
 
-    return NextResponse.rewrite(new URL(`${internal}${search}`, request.url));
+    return noindex(NextResponse.rewrite(new URL(`${internal}${search}`, request.url)));
   }
 
   return NextResponse.next();

@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
 import { getMenu, getFeatured, getSettings, getHours, categoryImage, FALLBACK_IMAGES } from "@/lib/menu";
 import { formatPrice, DAY_NAMES } from "@/lib/config";
+import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 
 /** Menu and content change from the dashboard, so don't cache indefinitely. */
 export const revalidate = 60;
@@ -35,6 +36,12 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* Tells search engines this is a bakery with an address, hours and a
+          menu — feeds the local map pack and "open now" results. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString(bakeryJsonLd(settings, hours)) }}
+      />
       <SiteHeader />
 
       {/* ---------- HERO ---------- */}

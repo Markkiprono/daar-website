@@ -10,6 +10,7 @@ import { ViewTracker } from "@/components/site/ViewTracker";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/menu";
 import { formatPrice, SITE } from "@/lib/config";
+import { menuItemJsonLd, jsonLdString } from "@/lib/seo";
 
 export const revalidate = 60;
 
@@ -116,6 +117,12 @@ export default async function MenuItemPage({ params }: { params: Promise<{ slug:
 
   return (
     <>
+      {/* One dish as structured data, so a search for the item by name can
+          show its price, photo and availability directly. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString(menuItemJsonLd(item)) }}
+      />
       <ViewTracker slug={item.slug} source="MENU" />
       <SiteHeader solid />
 
