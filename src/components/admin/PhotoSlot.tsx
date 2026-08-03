@@ -77,16 +77,15 @@ export function PhotoSlot({
             if (!okTypes.includes(file.type)) {
               setError(
                 favicon
-                  ? "That file isn't a PNG, SVG or ICO icon."
-                  : "That file isn't a photo we can use. Please choose a JPG, PNG or WebP.",
+                  ? "This file isn’t a PNG, SVG or ICO icon."
+                  : "This file isn’t a photo. Please choose a JPG, PNG or WebP.",
               );
               setPreview(current);
               return;
             }
             if (file.size > maxMB * 1024 * 1024) {
               setError(
-                `This image is ${(file.size / 1024 / 1024).toFixed(1)} MB — too big to upload. ` +
-                  `Please choose one under ${maxMB} MB.`,
+                `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${maxMB} MB limit. Please choose a smaller ${favicon ? "icon" : "photo"}.`,
               );
               setPreview(current);
               return;
@@ -113,18 +112,9 @@ export function PhotoSlot({
         {state?.ok && <p className="rounded-md bg-green-50 px-3 py-2 text-xs text-green-800">{state.message}</p>}
         {state && !state.ok && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{state.error}</p>}
 
-        <div>
-          <Button type="submit" size="sm" disabled={pending || (!preview && !remove)}>
-            {pending ? "Saving…" : "Save"}
-          </Button>
-          {!pending && !preview && !remove && (
-            <p className="mt-2 text-xs text-neutral-500">
-              {error
-                ? "Choose a different image to enable this."
-                : "Choose an image above to enable this."}
-            </p>
-          )}
-        </div>
+        <Button type="submit" size="sm" disabled={pending || (!preview && !remove)}>
+          {pending ? "Saving…" : "Save"}
+        </Button>
       </form>
     </div>
   );

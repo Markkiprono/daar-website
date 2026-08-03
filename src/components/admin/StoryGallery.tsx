@@ -99,13 +99,12 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
               // scary error page instead of a message. The chosen file is
               // left in place so the explanation below stays about it.
               if (!OK_TYPES.includes(file.type)) {
-                setFileError("That file isn't a photo we can use. Please choose a JPG, PNG or WebP.");
+                setFileError("This file isn’t a photo. Please choose a JPG, PNG or WebP.");
                 return;
               }
               if (file.size > MAX_MB * 1024 * 1024) {
                 setFileError(
-                  `This photo is ${(file.size / 1024 / 1024).toFixed(1)} MB — too big to upload. ` +
-                    `Please choose one under ${MAX_MB} MB, or take the photo at a lower size.`,
+                  `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${MAX_MB} MB limit. Please choose a smaller photo.`,
                 );
                 return;
               }
@@ -121,6 +120,8 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
           <Input id="gallery-alt" name="alt" maxLength={120} placeholder="e.g. The counter at Daar" />
         </div>
 
+        {/* The red error is the reason the button is disabled — no separate
+            helper line, which only added noise when a file was already chosen. */}
         {fileError && (
           <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {fileError}
@@ -129,20 +130,9 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
         {state?.ok && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{state.message}</p>}
         {state && !state.ok && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
 
-        <div>
-          <Button type="submit" disabled={pending || !ready}>
-            {pending ? "Uploading…" : "Add to gallery"}
-          </Button>
-          {/* Say WHY it's disabled — a greyed button with no reason reads as
-              broken to someone who isn't technical. */}
-          {!ready && !pending && (
-            <p className="mt-2 text-xs text-neutral-500">
-              {fileError
-                ? "Choose a different photo to enable this."
-                : "Choose a photo above, then this button turns on."}
-            </p>
-          )}
-        </div>
+        <Button type="submit" disabled={pending || !ready}>
+          {pending ? "Uploading…" : "Add to gallery"}
+        </Button>
       </form>
     </div>
   );
