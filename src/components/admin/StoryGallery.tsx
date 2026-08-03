@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import { addStoryPhoto, deleteStoryPhoto, moveStoryPhoto, type PhotoState } from "@/app/actions/site-photos";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +8,22 @@ import { Label } from "@/components/ui/label";
 
 type Photo = { id: string; imageUrl: string; imageAlt: string | null };
 
+const MAX_MB = 12;
+const OK_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+
 export function StoryGallery({ photos }: { photos: Photo[] }) {
   const [state, formAction, pending] = useActionState<PhotoState, FormData>(addStoryPhoto, undefined);
   const formRef = useRef<HTMLFormElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    if (state?.ok) formRef.current?.reset();
+    if (state?.ok) {
+      formRef.current?.reset();
+      setPreview(null);
+      setReady(false);
+    }
   }, [state?.ok]);
 
   return (
@@ -60,17 +70,68 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
 
       <form ref={formRef} action={formAction} className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4">
         <h3 className="text-sm font-medium">Add a photo</h3>
+
+        {preview && (
+          <div className="relative aspect-[3/4] w-full max-w-[160px] overflow-hidden rounded-md bg-neutral-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={preview} alt="" className="h-full w-full object-cover" />
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="gallery-photo">Image</Label>
-          <Input id="gallery-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required />
+          <Input
+            id="gallery-photo"
+            name="photo"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            required
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              setFileError(null);
+              setReady(false);
+              setPreview(null);
+              if (!file) return;
+
+              // Stop bad files HERE — before they reach the server, where an
+              // oversized upload fails at the framework level and shows a
+              // scary error page instead of this message.
+              if (!OK_TYPES.includes(file.type)) {
+                setFileError("That's not an image we can use. Please choose a JPG, PNG or WebP photo.");
+                e.target.value = "";
+                return;
+              }
+              if (file.size > MAX_MB * 1024 * 1024) {
+                setFileError(
+                  `That photo is ${(file.size / 1024 / 1024).toFixed(1)} MB, which is too large. ` +
+                    `Please choose one under ${MAX_MB} MB, or take a smaller photo.`,
+                );
+                e.target.value = "";
+                return;
+              }
+              setPreview(URL.createObjectURL(file));
+              setReady(true);
+            }}
+          />
+          <p className="text-xs text-neutral-500">JPG, PNG or WebP · up to {MAX_MB} MB.</p>
         </div>
+
         <div className="space-y-2">
           <Label htmlFor="gallery-alt">Description (optional)</Label>
           <Input id="gallery-alt" name="alt" maxLength={120} placeholder="e.g. The counter at Daar" />
         </div>
-        {state?.ok && <p className="rounded-md bg-green-50 px-3 py-2 text-xs text-green-800">{state.message}</p>}
-        {state && !state.ok && <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">{state.error}</p>}
-        <Button type="submit" disabled={pending}>{pending ? "Uploading…" : "Add to gallery"}</Button>
+
+        {fileError && (
+          <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+            {fileError}
+          </p>
+        )}
+        {state?.ok && <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-800">{state.message}</p>}
+        {state && !state.ok && <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.error}</p>}
+
+        <Button type="submit" disabled={pending || !ready}>
+          {pending ? "Uploading…" : "Add to gallery"}
+        </Button>
       </form>
     </div>
   );

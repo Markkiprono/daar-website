@@ -66,8 +66,27 @@ export function PhotoSlot({
               setPreview(current);
               return;
             }
+            // Catch bad files in the browser. An oversized upload fails at the
+            // framework level before any server code runs, which would show a
+            // blank error page rather than a message the owner can act on.
+            const okTypes = favicon
+              ? ["image/png", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"]
+              : ["image/jpeg", "image/png", "image/webp", "image/avif"];
+            if (!okTypes.includes(file.type)) {
+              setError(
+                favicon
+                  ? "Please choose a PNG, SVG or ICO icon."
+                  : "That's not an image we can use. Please choose a JPG, PNG or WebP photo.",
+              );
+              e.target.value = "";
+              setPreview(current);
+              return;
+            }
             if (file.size > maxMB * 1024 * 1024) {
-              setError(`That file is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${maxMB} MB.`);
+              setError(
+                `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB, which is too large. ` +
+                  `Please choose one under ${maxMB} MB.`,
+              );
               e.target.value = "";
               setPreview(current);
               return;
