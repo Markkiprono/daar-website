@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   experimental: {
+    /**
+     * The admin dashboard is served on its own host and reaches the app
+     * through a rewrite in src/proxy.ts. Proxy buffers the request body, and
+     * its default cap is 10 MB — so a photo upload larger than that is
+     * truncated mid-stream and the Server Action fails with "Unexpected end
+     * of form". Raised to match the 13 MB Server Action limit below.
+     */
+    proxyClientMaxBodySize: "13mb",
+
     serverActions: {
       /**
        * The owner uploads photos straight from a phone — 2–8 MB is normal,
