@@ -25,6 +25,15 @@ model Category {
   displayOrder Int        @default(0)
   isVisible    Boolean    @default(true)
   items        MenuItem[]
+
+  /// Optional marketing photo for the category tile on the home page. When
+  /// unset, categoryImage() in src/lib/menu.ts keeps borrowing a photo from
+  /// one of the category's items, so tiles look the same until one is set.
+  imageUrl    String?
+  imageAlt    String?
+  imageWidth  Int?
+  imageHeight Int?
+  blurDataUrl String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

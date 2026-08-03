@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/dal";
 import { deleteCategory, moveCategory } from "@/app/actions/categories";
 import { NewCategoryForm } from "@/components/admin/NewCategoryForm";
+import { CategoryPhoto } from "@/components/admin/CategoryPhoto";
 import { Button } from "@/components/ui/button";
 
 export default async function AdminCategoriesPage() {
@@ -21,9 +22,11 @@ export default async function AdminCategoriesPage() {
         {categories.map((c, i) => (
           <li
             key={c.id}
-            className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3"
+            className="flex items-start gap-3 rounded-lg border border-neutral-200 bg-white p-3"
           >
-            <div className="min-w-0 flex-1">
+            <CategoryPhoto id={c.id} name={c.name} current={c.imageUrl} />
+
+            <div className="min-w-0 flex-1 pt-1">
               <p className="truncate font-medium">{c.name}</p>
               <p className="text-xs text-neutral-500">
                 {c._count.items} item{c._count.items === 1 ? "" : "s"}

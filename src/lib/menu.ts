@@ -71,14 +71,28 @@ export const getStoryPhotos = cache(async () => {
 });
 
 /**
- * Category tiles need a photograph. Rather than adding another upload the
- * owner has to manage, we borrow the first item in the category that has
- * one — so tiles improve automatically as photos get added.
+ * Category tiles need a photograph, in order of preference:
+ *
+ *   1. the category's own photo, set in admin — the one the owner controls
+ *      deliberately, for tiles that need to sell rather than just illustrate;
+ *   2. the first item in the category that has one, so a tile still looks
+ *      right the moment items get photos and without any extra work;
+ *   3. stock brand photography.
+ *
+ * Only (2) and (3) existed before, so tiles are unchanged until a category
+ * photo is actually uploaded.
  */
 export function categoryImage(
-  category: { items: { imageUrl: string | null; blurDataUrl: string | null }[] },
+  category: {
+    imageUrl?: string | null;
+    blurDataUrl?: string | null;
+    items: { imageUrl: string | null; blurDataUrl: string | null }[];
+  },
   fallback: string,
 ) {
+  if (category.imageUrl) {
+    return { src: category.imageUrl, blur: category.blurDataUrl ?? null };
+  }
   const withPhoto = category.items.find((i) => i.imageUrl);
   return {
     src: withPhoto?.imageUrl ?? fallback,
