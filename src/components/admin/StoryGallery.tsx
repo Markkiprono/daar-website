@@ -81,12 +81,17 @@ export function StoryGallery({ photos }: { photos: Photo[] }) {
 
         <div className="space-y-2">
           <Label htmlFor="gallery-photo">Image</Label>
-          <Input
+          {/* A RAW <input type="file"> — not the shadcn <Input>, which wraps a
+              Base UI primitive that doesn't forward a file input's native
+              onChange. Through that component the handler never fired, so no
+              preview or error appeared and the button stayed disabled. */}
+          <input
             id="gallery-photo"
             name="photo"
             type="file"
             accept="image/jpeg,image/png,image/webp,image/avif"
             required
+            className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-neutral-100 file:px-3 file:py-2 file:text-sm hover:file:bg-neutral-200"
             onChange={(e) => {
               const file = e.target.files?.[0];
               setFileError(null);
