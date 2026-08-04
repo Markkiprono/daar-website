@@ -65,15 +65,17 @@ export default async function PrivacyPage() {
         <div className="mx-auto max-w-[760px] text-[1.02rem] font-light leading-relaxed [&_a]:text-daar-oxblood [&_a]:underline [&_a]:underline-offset-4 [&_li]:mt-2 [&_p]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6">
           <p className="text-sm text-daar-muted">Last updated {updated}</p>
 
+          {/* Written as one string rather than text around {SITE.name}: JSX
+              dropped the space after the expression and it rendered as
+              "Daar by Izzihandles personal data". */}
           <p>
-            This notice explains how {SITE.name} handles personal data, and your rights under
-            Kenya&apos;s Data Protection Act, 2019. It covers this website only.
+            {`This notice explains how ${SITE.name} handles personal data, and your rights under Kenya's Data Protection Act, 2019. It covers this website only.`}
           </p>
 
           <H>Who is responsible</H>
           <p>
-            {SITE.name} is the data controller for the information described here. We are at{" "}
-            {address}. You can reach us about anything on this page
+            {`${SITE.name} is the data controller for the information described here. Our address is ${address}.`}{" "}
+            You can reach us about anything on this page
             {contactEmail ? (
               <>
                 {" "}
@@ -188,7 +190,9 @@ export default async function PrivacyPage() {
 
           <p className="mt-12 border-t border-daar-rule pt-8 text-sm text-daar-muted">
             Questions about a booking rather than privacy?{" "}
-            <Link href="/visit">Get in touch</Link>.
+            {/* Straight to the message form, not a page you then have to
+                navigate from — #reach-out is the section that holds it. */}
+            <Link href="/story#reach-out">Leave us a message</Link>.
           </p>
         </div>
       </main>
