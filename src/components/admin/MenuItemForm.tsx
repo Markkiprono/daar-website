@@ -175,6 +175,20 @@ export function MenuItemForm({
         ) : null}
       </div>
 
+      {/* Both sections used to render as a bare heading with nothing beneath
+          it when no labels existed, which reads as broken rather than empty.
+          One line pointing at where they are made replaces the void. */}
+      {tags.length === 0 && (
+        <p className="rounded-md border border-dashed border-neutral-300 px-3 py-2.5 text-sm text-neutral-500">
+          No badges or dietary labels exist yet. Create them under{" "}
+          <a href="/admin/categories" className="text-[#481819] underline underline-offset-2">
+            Categories
+          </a>
+          , then they&apos;ll appear here as tick boxes.
+        </p>
+      )}
+
+      {badges.length > 0 && (
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium">Badges</legend>
         <div className="flex flex-wrap gap-2">
@@ -195,7 +209,9 @@ export function MenuItemForm({
           ))}
         </div>
       </fieldset>
+      )}
 
+      {dietary.length > 0 && (
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium">Dietary</legend>
         <div className="flex flex-wrap gap-2">
@@ -216,6 +232,7 @@ export function MenuItemForm({
           ))}
         </div>
       </fieldset>
+      )}
 
       <div className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4">
         <div className="flex items-center justify-between gap-4">

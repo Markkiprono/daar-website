@@ -3,16 +3,23 @@ import { requireAdmin } from "@/lib/dal";
 import { deleteCategory, moveCategory } from "@/app/actions/categories";
 import { NewCategoryForm } from "@/components/admin/NewCategoryForm";
 import { CategoryPhoto } from "@/components/admin/CategoryPhoto";
+import { TagManager } from "@/components/admin/TagManager";
 import { Button } from "@/components/ui/button";
 
 export default async function AdminCategoriesPage() {
   // Must precede every query — see the note in menu/page.tsx.
   await requireAdmin();
 
-  const categories = await db.category.findMany({
-    orderBy: { displayOrder: "asc" },
-    include: { _count: { select: { items: true } } },
-  });
+  const [categories, tags] = await Promise.all([
+    db.category.findMany({
+      orderBy: { displayOrder: "asc" },
+      include: { _count: { select: { items: true } } },
+    }),
+    db.tag.findMany({
+      orderBy: [{ kind: "asc" }, { name: "asc" }],
+      include: { _count: { select: { items: true } } },
+    }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -82,6 +89,23 @@ export default async function AdminCategoriesPage() {
       <div className="rounded-lg border border-neutral-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-medium">Add a category</h2>
         <NewCategoryForm />
+      </div>
+
+      {/* Lives here rather than in its own tab: both are ways of labelling the
+          menu, and the item form is where they get used. */}
+      <div className="rounded-lg border border-neutral-200 bg-white p-4">
+        <h2 className="text-sm font-medium">Badges &amp; dietary labels</h2>
+        <p className="mb-4 mt-0.5 text-xs text-neutral-500">
+          These are the tick boxes on every menu item.
+        </p>
+        <TagManager
+          tags={tags.map((t) => ({
+            id: t.id,
+            name: t.name,
+            kind: t.kind,
+            itemCount: t._count.items,
+          }))}
+        />
       </div>
     </div>
   );
