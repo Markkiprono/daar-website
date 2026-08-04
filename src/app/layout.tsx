@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bodoni_Moda, Jost, Montserrat } from "next/font/google";
 import { SITE } from "@/lib/config";
+import { ServiceWorker } from "@/components/site/ServiceWorker";
 import { getSettings } from "@/lib/menu";
 import "./globals.css";
 
@@ -114,7 +115,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        {children}
+        <ServiceWorker />
+      </body>
     </html>
   );
 }

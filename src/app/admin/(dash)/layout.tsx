@@ -26,8 +26,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ]);
 
   return (
-    <div className="min-h-dvh bg-neutral-50">
-      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur-md">
+    <div className="min-h-dvh bg-neutral-50 print:bg-white">
+      {/* The dashboard chrome has no business on a printed menu sheet. */}
+      <header className="sticky top-0 z-40 border-b border-neutral-200 bg-white/90 backdrop-blur-md print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
           <Link href="/admin" className="flex items-center gap-2.5">
             <BrandMark logo={logo} id="admin" className="h-7 w-auto text-[#481819]" />
@@ -67,7 +68,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <AdminNav counts={{ messages: unreadMessages, reservations: pendingBookings }} />
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8 pb-28">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-8 pb-28 print:max-w-none print:p-0">{children}</main>
     </div>
   );
 }

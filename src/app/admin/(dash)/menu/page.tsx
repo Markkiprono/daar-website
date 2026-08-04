@@ -24,9 +24,17 @@ export default async function AdminMenuPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-medium">Menu</h1>
-        <Link href="/admin/menu/new" className={buttonVariants({ size: "lg" })}>
-          Add item
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/print-menu"
+            className={buttonVariants({ size: "lg", variant: "outline" })}
+          >
+            Print / PDF
+          </Link>
+          <Link href="/admin/menu/new" className={buttonVariants({ size: "lg" })}>
+            Add item
+          </Link>
+        </div>
       </div>
 
       <AdminMenuList

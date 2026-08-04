@@ -298,3 +298,43 @@ body {
     display: none;
   }
 }
+/* ---------------------------------------------------------------
+   Print — /menu/print becomes a PDF people keep on their phone and
+   read where there is no wifi, so it must not carry the screen's
+   dark panels, textures or ink-heavy backgrounds onto paper.
+   --------------------------------------------------------------- */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #12100f !important;
+  }
+
+  /* The brand textures are decorative and cost a fortune in toner. */
+  .daar-tex,
+  .daar-tex-dark {
+    background-image: none !important;
+  }
+
+  /* Never split a course across two pages mid-item. */
+  section,
+  li {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2 {
+    break-after: avoid;
+  }
+
+  /* Spell out link targets — a printed underline is not clickable. */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.75em;
+    word-break: break-all;
+  }
+}

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Offline — Daar by Izzi</title>
+    <!--
+      A plain file on purpose.
+
+      This is the last thing a guest sees when the network is gone, so it must
+      not depend on the thing that is unavailable. No framework, no hydration,
+      no JavaScript, no webfonts — an earlier version was a Next route and
+      failed exactly when it was needed, because its script chunks were not in
+      the cache and the router errored trying to fetch them.
+
+      Colours are the brand's, inlined. System fonts only: a webfont cannot be
+      relied upon here either.
+    -->
+    <style>
+      :root {
+        --ink: #12100f;
+        --bone: #f4efe7;
+        --cream: #e8dfd2;
+        --tan: #c9a227;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        background: var(--ink);
+        color: var(--cream);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+        line-height: 1.6;
+      }
+      .wrap {
+        max-width: 32rem;
+      }
+      .eyebrow {
+        margin: 0;
+        font-size: 0.75rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--tan);
+      }
+      h1 {
+        margin: 0.75rem 0 0;
+        font-family: ui-serif, Georgia, "Times New Roman", serif;
+        font-size: clamp(2rem, 7vw, 3.5rem);
+        font-weight: 400;
+        line-height: 1.05;
+        color: var(--bone);
+      }
+      p {
+        margin: 1.25rem 0 0;
+        font-weight: 300;
+        color: rgba(232, 223, 210, 0.8);
+      }
+      a {
+        display: inline-block;
+        margin-top: 2rem;
+        padding: 0.9rem 1.75rem;
+        border: 1px solid var(--tan);
+        border-radius: 999px;
+        font-size: 0.75rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        text-decoration: none;
+        color: var(--tan);
+      }
+      a:hover,
+      a:focus-visible {
+        background: var(--tan);
+        color: var(--ink);
+      }
+      .brand {
+        margin-top: 2.5rem;
+        font-size: 0.75rem;
+        color: rgba(232, 223, 210, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="eyebrow">No connection</p>
+      <h1>You&rsquo;re offline</h1>
+      <p>
+        This page hasn&rsquo;t been saved to your device yet. If you&rsquo;ve opened the menu
+        before, it will still work.
+      </p>
+      <a href="/menu">Open the menu</a>
+      <p class="brand">Daar by Izzi &middot; Westlands, Nairobi</p>
+    </div>
+  </body>
+</html>
