@@ -33,7 +33,16 @@ export function BrandMark({
   if (logo.kind === "svg") {
     return (
       <span
-        className={`inline-block ${className ?? ""} [&>svg]:h-full [&>svg]:w-full`}
+        // The SVG takes its width from its own viewBox, never from the wrapper.
+        // It used to be w-full inside a w-auto span, which is circular: the
+        // span shrink-wraps to its content while the content asks for a
+        // percentage of the span. Chrome resolved it from the aspect ratio,
+        // Safari resolved it against the available width — so on iPhone the
+        // wrapper stretched across the header and preserveAspectRatio centred
+        // the artwork, leaving a large gap to the left of the logo.
+        // max-w-full keeps a wide mark from overflowing a narrow parent, and
+        // block removes the inline baseline gap under it.
+        className={`inline-block ${className ?? ""} [&>svg]:block [&>svg]:h-full [&>svg]:w-auto [&>svg]:max-w-full`}
         aria-hidden
         // Markup is screened by isSafeSvg() before it reaches here, and comes
         // from the owner's own file — not from visitor input.
