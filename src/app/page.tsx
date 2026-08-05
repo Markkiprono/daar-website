@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
 import { getMenu, getFeatured, getSettings, getHours, categoryImage, FALLBACK_IMAGES } from "@/lib/menu";
-import { formatPrice, DAY_NAMES } from "@/lib/config";
+import { formatPrice, DAY_NAMES, SITE } from "@/lib/config";
 import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 
 /** Menu and content change from the dashboard, so don't cache indefinitely. */
@@ -60,8 +60,17 @@ export default async function HomePage() {
         <div className="daar-tex-hero pointer-events-none absolute inset-0" />
 
         <div className="relative z-10 max-w-[960px] px-5 py-24">
-          <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
-            {settings?.addressLine ?? "Nairobi"} · Café &amp; Bakery
+          {/* The neighbourhood, not the postal address. This printed the full
+              addressLine, which was fine while that said "Nairobi, Kenya" and
+              became two cramped uppercase lines under the navbar the moment a
+              real one was entered. The full address belongs on Visit, in the
+              footer and in the structured data — the hero just says where we
+              are. */}
+          {/* Tighter tracking below sm so it holds one line on a 320px phone;
+              text-balance so that if it ever does wrap, it wraps evenly rather
+              than leaving one orphaned word. */}
+          <p className="text-balance font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.13em] text-daar-tan sm:tracking-[0.18em]">
+            {SITE.area}, {SITE.city} · {SITE.descriptor}
           </p>
           <h1 className="mt-4 font-[family-name:var(--font-display)] text-[clamp(2.75rem,11vw,7rem)] leading-[0.94] tracking-[-0.015em] text-daar-bone">
             {settings?.heroHeadline ?? "Patience tastes better"}
