@@ -69,10 +69,6 @@ export function MenuItemCard({ item, priority = false }: { item: MenuItemForCard
         </span>
       </div>
 
-      {item.description && (
-        <p className="mt-2 text-sm font-light text-daar-muted">{item.description}</p>
-      )}
-
       {(badges.length > 0 || dietary.length > 0) && (
         <div className="mt-3 flex flex-wrap gap-2">
           {badges.map(({ tag }) => (

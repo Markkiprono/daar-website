@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/dal";
 import { deleteCategory, moveCategory } from "@/app/actions/categories";
 import { NewCategoryForm } from "@/components/admin/NewCategoryForm";
+import { EditCategoryForm } from "@/components/admin/EditCategoryForm";
 import { CategoryPhoto } from "@/components/admin/CategoryPhoto";
 import { TagManager } from "@/components/admin/TagManager";
 import { Button } from "@/components/ui/button";
@@ -33,13 +34,15 @@ export default async function AdminCategoriesPage() {
           >
             <CategoryPhoto id={c.id} name={c.name} current={c.imageUrl} />
 
-            <div className="min-w-0 flex-1 pt-1">
-              <p className="truncate font-medium">{c.name}</p>
-              <p className="text-xs text-neutral-500">
-                {c._count.items} item{c._count.items === 1 ? "" : "s"}
-                {c.description ? ` · ${c.description}` : ""}
-              </p>
-            </div>
+            <EditCategoryForm
+              category={{
+                id: c.id,
+                name: c.name,
+                description: c.description,
+                displayOrder: c.displayOrder,
+                itemCount: c._count.items,
+              }}
+            />
 
             <div className="flex shrink-0 items-center gap-1">
               <form action={moveCategory}>

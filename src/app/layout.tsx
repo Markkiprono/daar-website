@@ -36,8 +36,16 @@ const body = Montserrat({
 
 /**
  * Metadata is generated (not static) so the favicon can come from the
- * dashboard. It falls back to /favicon.svg — the door mark — when the owner
- * hasn't uploaded one. Wrapped so a database blip never breaks the <head>.
+ * dashboard. It falls back to the door mark in /public when the owner hasn't
+ * uploaded one. Wrapped so a database blip never breaks the <head>.
+ *
+ * These icons are declared here rather than as app/favicon.ico on purpose.
+ * File-based metadata outranks generateMetadata, so an app/favicon.ico would
+ * silently win over whatever the dashboard has — which is exactly the bug
+ * that shipped: create-next-app's placeholder sat there and every browser and
+ * crawler got a Vercel triangle. The real icons now live in /public, which
+ * keeps /favicon.ico resolving for the many clients that request that path
+ * blind, without taking the override away from the owner.
  */
 const HOME_TITLE = `${SITE.name} — ${SITE.descriptor} in ${SITE.area}, ${SITE.city}`;
 const HOME_DESCRIPTION =
@@ -70,8 +78,23 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     alternates: { canonical: "/" },
     icons: {
-      icon: settings?.faviconUrl ?? "/favicon.svg",
-      apple: settings?.faviconUrl ?? "/favicon.svg",
+      // Ordered widest-support first. The .ico carries 16/32/48 because
+      // Google will not use a favicon it considers non-square, and 48 is the
+      // size it actually wants; the SVG is what a current browser picks.
+      icon: settings?.faviconUrl
+        ? [{ url: settings.faviconUrl }]
+        : [
+            { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+            { url: "/favicon.svg", type: "image/svg+xml" },
+            { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+          ],
+      // iOS ignores an SVG apple-touch-icon outright — it wants a raster. The
+      // uploaded favicon is honoured only when it is one; otherwise this falls
+      // back to the door mark rather than pointing at a file Safari will drop.
+      apple: settings?.faviconUrl && !settings.faviconUrl.endsWith(".svg")
+        ? settings.faviconUrl
+        : { url: "/apple-icon.png", sizes: "180x180" },
+      shortcut: "/favicon.ico",
     },
     openGraph: {
       type: "website",

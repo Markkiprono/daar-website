@@ -94,7 +94,12 @@ export function bakeryJsonLd(settings: Settings, hours: Hours) {
     description: `${SITE.descriptor} in ${SITE.area}, ${SITE.city}. Slow-proved bread and pastry, baked the same morning it's served.`,
     url: SITE.url,
     image: images,
-    ...(settings?.logoWordmarkUrl ? { logo: absolute(settings.logoWordmarkUrl) } : {}),
+    // Always emit a logo. This used to be omitted whenever the owner hadn't
+    // uploaded a wordmark in the dashboard, which is the usual state — and
+    // with no `logo` in the structured data there is nothing for Google to
+    // show as the brand's mark. The committed PNG is the same lockup, on
+    // bone, so search surfaces it cleanly against white.
+    logo: absolute(settings?.logoWordmarkUrl ?? "/brand/logo.png"),
     servesCuisine: ["Bakery", "Coffee", "Brunch", "Pastry"],
     address: {
       "@type": "PostalAddress",

@@ -56,6 +56,9 @@ export async function createCategory(_prev: CategoryState, formData: FormData): 
 
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  // The home page renders a tile per category, so its names and order go
+  // stale too — updateCategoryImage already refreshed it, these did not.
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -81,6 +84,9 @@ export async function updateCategory(id: string, _prev: CategoryState, formData:
 
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  // The home page renders a tile per category, so its names and order go
+  // stale too — updateCategoryImage already refreshed it, these did not.
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -188,6 +194,7 @@ export async function deleteCategory(formData: FormData) {
   await cleanup(doomed?.imageUrl);
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  revalidatePath("/");
 }
 
 export async function moveCategory(formData: FormData) {
@@ -212,4 +219,5 @@ export async function moveCategory(formData: FormData) {
 
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  revalidatePath("/");
 }
