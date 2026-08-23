@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
-import { getMenu, getFeatured, getSettings, getHours, categoryImage, FALLBACK_IMAGES } from "@/lib/menu";
+import { getFeatured, getSettings, getHours } from "@/lib/menu";
 import { formatPrice, DAY_NAMES, SITE } from "@/lib/config";
 import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 
@@ -11,8 +11,7 @@ import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [categories, featured, settings, hours] = await Promise.all([
-    getMenu(),
+  const [featured, settings, hours] = await Promise.all([
     getFeatured(),
     getSettings(),
     getHours(),
@@ -109,52 +108,6 @@ export default async function HomePage() {
                 {settings.storyBody}
               </p>
             </Reveal>
-          </section>
-        )}
-
-        {/* ---------- CATEGORIES ---------- */}
-        {categories.length > 0 && (
-          <section className="px-5 pb-24">
-            <div className="mx-auto max-w-[1240px]">
-              <Reveal className="mx-auto mb-12 max-w-[640px] text-center">
-                <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-                  What we make
-                </p>
-                <h2 className="mt-3 font-[family-name:var(--font-display)] text-[clamp(2rem,7vw,4rem)] leading-none">
-                  Our Categories
-                </h2>
-                <div className="mx-auto mt-6 h-px w-16 bg-[linear-gradient(90deg,transparent,var(--daar-tan),transparent)]" />
-              </Reveal>
-
-              <Reveal className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-                {categories.map((c, i) => {
-                  const img = categoryImage(c, FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]!);
-                  return (
-                    <Link
-                      key={c.id}
-                      href={`/menu#${c.slug}`}
-                      className="daar-arch group relative block aspect-[3/4] bg-daar-slate"
-                    >
-                      <Image
-                        src={img.src}
-                        alt={c.name}
-                        fill
-                        sizes="(min-width: 768px) 280px, 45vw"
-                        className="object-cover transition-transform duration-[1200ms] ease-[cubic-bezier(.22,.61,.36,1)] group-hover:scale-105"
-                        {...(img.blur ? { placeholder: "blur" as const, blurDataURL: img.blur } : {})}
-                      />
-                      <span className="absolute inset-0 bg-[linear-gradient(180deg,transparent_35%,rgba(18,16,15,.82))]" />
-                      <span className="absolute inset-x-0 bottom-6 z-10 text-center font-[family-name:var(--font-display)] text-[1.15rem] text-daar-bone md:text-[1.5rem]">
-                        {c.name}
-                        <span className="mt-1 block font-[family-name:var(--font-label)] text-[10px] uppercase tracking-[0.18em] text-daar-tan">
-                          {c.items.length} item{c.items.length === 1 ? "" : "s"}
-                        </span>
-                      </span>
-                    </Link>
-                  );
-                })}
-              </Reveal>
-            </div>
           </section>
         )}
       </main>
