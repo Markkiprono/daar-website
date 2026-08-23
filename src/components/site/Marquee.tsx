@@ -23,12 +23,24 @@ export type Frame = {
 function Band({ frames, reverse = false }: { frames: Frame[]; reverse?: boolean }) {
   if (frames.length === 0) return null;
 
+  // Enough frames that one copy is wider than any screen. With four
+  // photographs on a wide monitor the band ran out mid-loop and the tail end
+  // was empty — the gap that made the whole thing look broken.
+  const filled =
+    frames.length >= 8
+      ? frames
+      : Array.from({ length: Math.ceil(8 / frames.length) }, () => frames).flat();
+
   return (
-    <div className="daar-marquee-wrap daar-noscrollbar overflow-x-auto">
-      <div className={`daar-marquee flex gap-3 ${reverse ? "is-reverse" : ""}`}>
+    <div className="daar-marquee-wrap daar-noscrollbar">
+      {/* No gap on the track itself: the copies must tile exactly, because the
+          animation translates by half the track. A gap between them makes half
+          the track one gap wider than a copy, and the seam tears open a little
+          further on every loop. The spacing lives inside each copy instead. */}
+      <div className={`daar-marquee flex ${reverse ? "is-reverse" : ""}`}>
         {[0, 1].map((copy) => (
-          <div key={copy} className="flex shrink-0 gap-3" aria-hidden={copy === 1}>
-            {frames.map((frame, i) => (
+          <div key={copy} className="flex shrink-0 gap-3 pr-3" aria-hidden={copy === 1}>
+            {filled.map((frame, i) => (
               <div
                 key={`${copy}-${frame.src}-${i}`}
                 className="relative h-[clamp(9rem,22vw,17rem)] w-[clamp(13rem,32vw,25rem)] shrink-0 overflow-hidden rounded-[3px] bg-daar-slate"

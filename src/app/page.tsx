@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
 import { HeroMedia } from "@/components/site/HeroMedia";
-import { Staged } from "@/components/site/Staged";
+import { Stack } from "@/components/site/Stack";
 import { Marquee, type Frame } from "@/components/site/Marquee";
 import { getFeatured, getSettings, getHours, getGallery } from "@/lib/menu";
 import { formatPrice, DAY_NAMES, SITE } from "@/lib/config";
@@ -41,7 +41,6 @@ export default async function HomePage() {
     { src: "/brand/terrace-drink.jpg", alt: "A drink on the terrace" },
     { src: "/brand/packaging-marble.jpg", alt: "Daar packaging" },
     { src: "/brand/counter.jpg", alt: "The counter" },
-    { src: "/brand/atmos-02.jpg", alt: "Inside Daar" },
     { src: "/brand/interior-01.jpg", alt: "Brushed steel against plaster" },
   ];
   const plates: Frame[] = gallery
@@ -134,12 +133,12 @@ export default async function HomePage() {
       </main>
 
       {/* ---------- THE IDEA ----------
-          The café's own sentence, taken apart and delivered a line at a time
-          instead of as one paragraph nobody stops for. */}
-      <Staged
-        eyebrow="Daar means home"
-        beats={[
+          The café's own sentence, one panel at a time, each sliding up over
+          the last instead of a paragraph nobody stops for. */}
+      <Stack
+        panels={[
           {
+            eyebrow: "Daar means home",
             line: "Daar means home.",
             image: settings?.storyImageUrl ?? "/brand/interior-01.jpg",
             alt: "Inside Daar — brushed steel against the plaster wall",
@@ -153,9 +152,12 @@ export default async function HomePage() {
             line: "The things worth eating can’t be hurried.",
             image: settings?.visitImageUrl ?? "/brand/patience-plates.jpg",
             alt: "Daar plates reading ‘Patience tastes better’",
+            links: [
+              { label: "See the menu", href: "/menu" },
+              { label: "Plan your visit", href: "/visit" },
+            ],
           },
         ]}
-        closing={settings?.storyBody ?? undefined}
       />
 
       {/* ---------- WHAT WE DO ----------
