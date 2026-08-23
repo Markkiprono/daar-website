@@ -3,6 +3,8 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
+import { HeroMedia } from "@/components/site/HeroMedia";
+import { Staged } from "@/components/site/Staged";
 import { getFeatured, getSettings, getHours } from "@/lib/menu";
 import { formatPrice, DAY_NAMES, SITE } from "@/lib/config";
 import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
@@ -58,17 +60,11 @@ export default async function HomePage() {
 
       {/* ---------- HERO ---------- */}
       <section className="relative grid min-h-[100svh] place-items-center overflow-hidden bg-daar-ink text-center">
-        <div className="absolute inset-0">
-          <Image
-            src={heroImage}
-            alt="Inside Daar — takeaway boxes on a paint-marbled table"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,16,15,.15),rgba(18,16,15,.55)_55%,rgba(18,16,15,.92))]" />
-        </div>
+        <HeroMedia
+          image={heroImage}
+          video={settings?.heroVideoUrl ?? null}
+          alt="Inside Daar — takeaway boxes on a paint-marbled table"
+        />
         <div className="daar-tex-hero pointer-events-none absolute inset-0" />
 
         <div className="relative z-10 max-w-[960px] px-5 py-24">
@@ -107,23 +103,80 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
+
+        {/* Says there is more below without asking anyone to read a word. */}
+        <span
+          aria-hidden
+          className="absolute bottom-8 left-1/2 h-12 w-px -translate-x-1/2 bg-[linear-gradient(180deg,transparent,var(--daar-tan))]"
+        />
       </section>
 
       <main className="flex-1 bg-daar-bone text-daar-ink">
-        {/* ---------- INTRO ---------- */}
-        {settings?.storyBody && (
-          <section className="px-5 py-24">
-            <Reveal className="mx-auto max-w-[760px] text-center">
-              <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-                Daar means home
-              </p>
-              <p className="mt-5 text-[clamp(1.15rem,3vw,1.5rem)] font-light leading-relaxed">
-                {settings.storyBody}
-              </p>
-            </Reveal>
-          </section>
-        )}
       </main>
+
+      {/* ---------- THE IDEA ----------
+          The café's own sentence, taken apart and delivered a line at a time
+          instead of as one paragraph nobody stops for. */}
+      <Staged
+        eyebrow="Daar means home"
+        beats={[
+          {
+            line: "Daar means home.",
+            image: settings?.storyImageUrl ?? "/brand/interior-01.jpg",
+            alt: "Inside Daar — brushed steel against the plaster wall",
+          },
+          {
+            line: "One room. One idea.",
+            image: heroImage,
+            alt: "The counter at Daar",
+          },
+          {
+            line: "The things worth eating can’t be hurried.",
+            image: settings?.visitImageUrl ?? "/brand/patience-plates.jpg",
+            alt: "Daar plates reading ‘Patience tastes better’",
+          },
+        ]}
+        closing={settings?.storyBody ?? undefined}
+      />
+
+      {/* ---------- WHAT WE DO ---------- */}
+      <section className="bg-daar-bone px-5 py-28 text-daar-ink">
+        <div className="mx-auto max-w-[1240px]">
+          <Reveal className="mx-auto mb-16 max-w-[640px] text-center">
+            <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
+              What we do
+            </p>
+            <div className="mx-auto mt-6 h-px w-16 bg-[linear-gradient(90deg,transparent,var(--daar-tan),transparent)]" />
+          </Reveal>
+
+          <div className="grid gap-12 md:grid-cols-3 md:gap-10">
+            {[
+              {
+                title: "Proved slowly",
+                body: "Dough is given the hours it asks for. There is no version of this that goes faster.",
+              },
+              {
+                title: "Baked this morning",
+                body: "Everything on the counter was made in our kitchen today. What sells out, sells out.",
+              },
+              {
+                title: "One room",
+                body: `Fourth floor of The Mandrake, in ${SITE.area}. Small on purpose.`,
+              },
+            ].map((pillar, i) => (
+              <Reveal key={pillar.title} delay={i * 110}>
+                <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
+                  {String(i + 1).padStart(2, "0")}
+                </p>
+                <h3 className="mt-4 font-[family-name:var(--font-display)] text-[clamp(1.6rem,4vw,2.25rem)] leading-tight">
+                  {pillar.title}
+                </h3>
+                <p className="mt-4 font-light leading-relaxed text-daar-muted">{pillar.body}</p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* ---------- CHEF'S SPECIAL ---------- */}
       {featured && (

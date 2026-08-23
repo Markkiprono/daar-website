@@ -72,9 +72,25 @@ export default async function StoryPage() {
     <>
       <SiteHeader solid />
 
-      {/* ---------- masthead ---------- */}
-      <section className="daar-tex daar-tex-dark bg-daar-ink px-5 pb-20 pt-20 text-center text-daar-cream">
-        <div className="mx-auto max-w-[820px]">
+      {/* ---------- masthead ----------
+          The opening photograph was sitting in a box below the title, so the
+          page began with a band of flat colour. Same photograph, used as the
+          opening itself. */}
+      <section className="relative grid min-h-[78svh] place-items-center overflow-hidden bg-daar-ink px-5 text-center text-daar-cream">
+        <div className="absolute inset-0">
+          <Image
+            src={settings?.storyImageUrl ?? "/brand/interior-01.jpg"}
+            alt="Inside Daar — brushed steel against the plaster wall"
+            fill
+            priority
+            sizes="100vw"
+            className="daar-drift object-cover"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,16,15,.35),rgba(18,16,15,.5)_55%,rgba(18,16,15,.9))]" />
+        </div>
+        <div className="daar-tex-hero pointer-events-none absolute inset-0" />
+
+        <div className="relative z-10 mx-auto max-w-[820px] py-24">
           <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
             Our story
           </p>
@@ -85,21 +101,6 @@ export default async function StoryPage() {
       </section>
 
       <main className="flex-1 bg-daar-bone text-daar-ink">
-        {/* ---------- opening image ---------- */}
-        <section className="px-5 pt-16">
-          <Reveal className="mx-auto max-w-[1000px]">
-            <div className="relative aspect-[16/10] overflow-hidden rounded-[3px] bg-daar-slate">
-              <Image
-                src={settings?.storyImageUrl ?? "/brand/interior-01.jpg"}
-                alt="Inside Daar — brushed steel against the plaster wall"
-                fill
-                priority
-                sizes="(min-width: 1024px) 1000px, 92vw"
-                className="object-cover"
-              />
-            </div>
-          </Reveal>
-        </section>
 
         {/* ---------- prose ---------- */}
         <section className="px-5 py-16">
