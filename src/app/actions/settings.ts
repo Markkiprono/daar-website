@@ -47,6 +47,11 @@ const SettingsSchema = z.object({
   heroHeadline: z.string().trim().min(1, "Hero headline is required").max(120),
   heroSubcopy: z.string().trim().max(300).optional().or(z.literal("")),
 
+  // The chef, on the home page
+  chefName: z.string().trim().max(80).optional().or(z.literal("")),
+  chefRole: z.string().trim().max(80).optional().or(z.literal("")),
+  chefQuote: z.string().trim().max(600).optional().or(z.literal("")),
+
   // Story page
   storyTitle: z.string().trim().min(1, "Story title is required").max(120),
   storyBody: z.string().trim().max(6000).optional().or(z.literal("")),
@@ -149,6 +154,9 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
         socials,
         heroHeadline: d.heroHeadline,
         heroSubcopy: d.heroSubcopy || "",
+        chefName: d.chefName || null,
+        chefRole: d.chefRole || null,
+        chefQuote: d.chefQuote || null,
         storyTitle: d.storyTitle,
         storyBody: d.storyBody || "",
         reservationsEnabled: d.reservationsEnabled ?? false,
@@ -161,6 +169,9 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
         id: "singleton",
         addressLine: d.addressLine,
         heroHeadline: d.heroHeadline,
+        chefName: d.chefName || null,
+        chefRole: d.chefRole || null,
+        chefQuote: d.chefQuote || null,
         storyTitle: d.storyTitle,
         currency: d.currency,
         socials,

@@ -23,6 +23,9 @@ export type SettingsValues = {
   facebook: string;
   heroHeadline: string;
   heroSubcopy: string;
+  chefName: string;
+  chefRole: string;
+  chefQuote: string;
   storyTitle: string;
   storyBody: string;
   reservationsEnabled: boolean;
@@ -315,6 +318,29 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
         <div className="space-y-2">
           <Label htmlFor="heroSubcopy">Hero subcopy</Label>
           <Input id="heroSubcopy" name="heroSubcopy" defaultValue={values.heroSubcopy} maxLength={300} />
+        </div>
+      </Section>
+
+      <Section
+        title="The chef"
+        hint="Shown on the home page. Leave the name or the quote blank and the whole section is hidden — better nothing than words nobody said."
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="chefName">Name</Label>
+            <Input id="chefName" name="chefName" defaultValue={values.chefName} maxLength={80} placeholder="e.g. Vikash Pandey" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="chefRole">Role</Label>
+            <Input id="chefRole" name="chefRole" defaultValue={values.chefRole} maxLength={80} placeholder="Executive Chef" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="chefQuote">Welcome</Label>
+          <Textarea id="chefQuote" name="chefQuote" defaultValue={values.chefQuote} rows={5} maxLength={600} placeholder="A few words to welcome people, in the chef&apos;s own voice." />
+          <p className="text-xs text-neutral-500">
+            Published under the name above, so it should be theirs. The portrait lives under Photos.
+          </p>
         </div>
       </Section>
 

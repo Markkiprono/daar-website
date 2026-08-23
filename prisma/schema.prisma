@@ -286,6 +286,16 @@ model SiteSettings {
   /// Photo on the Visit and Reserve pages.
   visitImageUrl String?
 
+  /// --- The chef, on the home page ---
+  /// Words published under a named person, so they belong in the dashboard
+  /// where that person can approve and change them — not in the page source.
+  /// Blank name or quote hides the section rather than printing a placeholder
+  /// attributed to somebody real.
+  chefName     String?
+  chefRole     String? @default("Executive Chef")
+  chefQuote    String?
+  chefImageUrl String?
+
   /// Browser-tab icon. Falls back to the door mark when unset.
   faviconUrl String?
 

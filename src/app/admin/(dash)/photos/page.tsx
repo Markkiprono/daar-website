@@ -47,6 +47,13 @@ export default async function PhotosPage() {
             aspect="aspect-[16/9]"
           />
           <HeroVideoSlot current={settings?.heroVideoUrl ?? null} />
+          <PhotoSlot
+            slot="chef"
+            title="The chef"
+            description="Portrait beside the welcome on the home page. Upright works best. The words themselves live under Settings."
+            current={settings?.chefImageUrl ?? null}
+            aspect="aspect-[3/4]"
+          />
         </div>
       </Section>
 

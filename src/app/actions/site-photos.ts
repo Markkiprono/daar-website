@@ -14,6 +14,7 @@ const SLOTS = {
   hero: "heroImageUrl",
   story: "storyImageUrl",
   visit: "visitImageUrl",
+  chef: "chefImageUrl",
 } as const;
 type Slot = keyof typeof SLOTS;
 

@@ -246,42 +246,49 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ---------- THE CHEF ---------- */}
-      <section className="bg-daar-bone px-5 py-28 text-daar-ink">
-        <div className="mx-auto grid max-w-[1240px] items-center gap-12 lg:grid-cols-[.85fr_1.15fr] lg:gap-20">
-          <Reveal rise className="daar-arch relative aspect-[3/4] bg-daar-slate">
-            <Image
-              src="/brand/chef-vikash.webp"
-              alt="Vikash Pandey, Executive Chef at Daar"
-              fill
-              sizes="(min-width: 1024px) 440px, 92vw"
-              className="object-cover"
-            />
-          </Reveal>
+      {/* ---------- THE CHEF ----------
+          Every word and the portrait come from the dashboard. Published under
+          a named person, so they have to be changeable by that person rather
+          than by a deploy — and with no name or no words the section does not
+          render at all, which is better than a placeholder with someone's
+          name under it. */}
+      {settings?.chefName && settings?.chefQuote && (
+        <section className="bg-daar-bone px-5 py-28 text-daar-ink">
+          <div className="mx-auto grid max-w-[1240px] items-center gap-12 lg:grid-cols-[.85fr_1.15fr] lg:gap-20">
+            <Reveal rise className="daar-arch relative aspect-[3/4] bg-daar-slate">
+              <Image
+                src={settings.chefImageUrl ?? "/brand/chef-vikash.webp"}
+                alt={`${settings.chefName}, ${settings.chefRole ?? "chef"} at ${SITE.name}`}
+                fill
+                sizes="(min-width: 1024px) 440px, 92vw"
+                className="object-cover"
+              />
+            </Reveal>
 
-          <Reveal>
-            <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-              From the kitchen
-            </p>
-            <blockquote className="mt-6 font-[family-name:var(--font-display)] text-[clamp(1.5rem,3.6vw,2.5rem)] leading-[1.15]">
-              &ldquo;Everything that leaves this kitchen has been through my hands or my team&rsquo;s.
-              We cook the way we would at home, for people we are glad to see. Come hungry, and
-              stay as long as you like.&rdquo;
-            </blockquote>
-            <div className="mt-8 flex items-center gap-4">
-              <span className="h-px w-12 bg-daar-tan" />
-              <div>
-                <p className="font-[family-name:var(--font-display)] text-[1.25rem]">
-                  Vikash Pandey
-                </p>
-                <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-                  Executive Chef
-                </p>
+            <Reveal>
+              <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
+                From the kitchen
+              </p>
+              <blockquote className="mt-6 font-[family-name:var(--font-display)] text-[clamp(1.5rem,3.6vw,2.5rem)] leading-[1.15]">
+                &ldquo;{settings.chefQuote}&rdquo;
+              </blockquote>
+              <div className="mt-8 flex items-center gap-4">
+                <span className="h-px w-12 bg-daar-tan" />
+                <div>
+                  <p className="font-[family-name:var(--font-display)] text-[1.25rem]">
+                    {settings.chefName}
+                  </p>
+                  {settings.chefRole && (
+                    <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
+                      {settings.chefRole}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+            </Reveal>
+          </div>
+        </section>
+      )}
 
       {/* ---------- CHEF'S SPECIAL ---------- */}
       {featured && (
