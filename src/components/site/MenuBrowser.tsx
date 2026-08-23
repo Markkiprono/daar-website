@@ -30,6 +30,41 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
   const [scrolledCat, setScrolledCat] = useState<string | null>(categories[0]?.slug ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  /**
+   * Drag-to-scroll for the category strip.
+   *
+   * The strip scrolls horizontally but its scrollbar is hidden, which is right
+   * on a phone — you swipe it. On a desktop there was then no scrollbar, no
+   * drag and no affordance, so once the café had more categories than fit the
+   * width, the ones past the edge were simply unreachable with a mouse.
+   *
+   * Mouse only: touch already scrolls natively and hijacking it would break
+   * the thing that works. The fades are rendered only on a side that has more
+   * to show, so a strip that fits looks untouched.
+   */
+  const stripRef = useRef<HTMLElement>(null);
+  const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
+  const [dragging, setDragging] = useState(false);
+  const [edges, setEdges] = useState({ left: false, right: false });
+
+  const readEdges = () => {
+    const el = stripRef.current;
+    if (!el) return;
+    const max = el.scrollWidth - el.clientWidth;
+    setEdges({ left: el.scrollLeft > 1, right: el.scrollLeft < max - 1 });
+  };
+
+  useEffect(() => {
+    readEdges();
+    const el = stripRef.current;
+    if (!el) return;
+    // Categories can arrive or the window can change width; either can turn a
+    // strip that fitted into one that does not.
+    const ro = new ResizeObserver(readEdges);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [categories]);
+
   const deferredQuery = useDeferredValue(query);
   const searching = deferredQuery.trim().length > 0;
   const filtering = searching || activeCat !== null;
@@ -171,7 +206,64 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
           </div>
 
           {/* Category chips. No "All" — an active chip toggles itself off. */}
-          <nav aria-label="Menu categories" className="daar-noscrollbar -mx-1 flex gap-2 overflow-x-auto px-1 py-3">
+          <div className="relative -mx-1">
+          <nav
+            ref={stripRef}
+            aria-label="Menu categories"
+            onScroll={readEdges}
+            onPointerDown={(e) => {
+              if (e.pointerType !== "mouse") return;
+              const el = stripRef.current;
+              if (!el || el.scrollWidth <= el.clientWidth) return;
+              drag.current = {
+                active: true,
+                startX: e.clientX,
+                startScroll: el.scrollLeft,
+                moved: false,
+              };
+              setDragging(true);
+              // Throws if the pointer is already gone; losing capture just
+              // means the drag ends at the element edge, which is survivable.
+              try {
+                el.setPointerCapture(e.pointerId);
+              } catch {}
+            }}
+            onPointerMove={(e) => {
+              if (!drag.current.active) return;
+              const el = stripRef.current;
+              if (!el) return;
+              const dx = e.clientX - drag.current.startX;
+              // A few pixels of slop, so a slightly shaky click is still a click.
+              if (Math.abs(dx) > 4) drag.current.moved = true;
+              el.scrollLeft = drag.current.startScroll - dx;
+            }}
+            onPointerUp={(e) => {
+              if (!drag.current.active) return;
+              drag.current.active = false;
+              setDragging(false);
+              try {
+                stripRef.current?.releasePointerCapture(e.pointerId);
+              } catch {}
+            }}
+            onPointerCancel={() => {
+              drag.current.active = false;
+              setDragging(false);
+            }}
+            onClickCapture={(e) => {
+              // Let go after dragging across a chip and you meant to scroll,
+              // not to filter by whatever happened to be under the cursor.
+              if (drag.current.moved) {
+                e.preventDefault();
+                e.stopPropagation();
+                drag.current.moved = false;
+              }
+            }}
+            className={[
+              "daar-noscrollbar flex gap-2 overflow-x-auto px-1 py-3",
+              edges.left || edges.right ? "cursor-grab" : "",
+              dragging ? "cursor-grabbing select-none" : "",
+            ].join(" ")}
+          >
             {categories.map((c) => {
               const isActive = filtering ? activeCat === c.slug : scrolledCat === c.slug;
               return (
@@ -200,6 +292,21 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
               );
             })}
           </nav>
+
+          {/* Only on a side that actually has more to show. */}
+          {edges.left && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-daar-bone to-transparent"
+            />
+          )}
+          {edges.right && (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-daar-bone to-transparent"
+            />
+          )}
+          </div>
         </div>
       </div>
 
