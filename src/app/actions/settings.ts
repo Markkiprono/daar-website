@@ -171,7 +171,11 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
   }
 
   // Every public page reads these.
-  for (const p of ["/", "/menu", "/story", "/visit", "/reserve"]) revalidatePath(p);
+  for (const p of ["/", "/menu", "/story", "/visit", "/reserve", "/privacy"]) revalidatePath(p);
+  // Item pages are prerendered and read all of this, but nothing used to
+  // refresh them — so an edit sat stale until the 60s window lapsed, and
+  // the first visitor after that got the old page while it regenerated.
+  revalidatePath("/menu/[slug]", "page");
   revalidatePath("/admin/settings");
 
   return { ok: true };
@@ -215,5 +219,6 @@ export async function updateHours(formData: FormData) {
   }
 
   for (const p of ["/", "/visit", "/reserve"]) revalidatePath(p);
+  revalidatePath("/menu/[slug]", "page");
   revalidatePath("/admin/settings");
 }

@@ -56,6 +56,7 @@ export async function createCategory(_prev: CategoryState, formData: FormData): 
 
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
   // The home page renders a tile per category, so its names and order go
   // stale too — updateCategoryImage already refreshed it, these did not.
   revalidatePath("/");
@@ -84,6 +85,7 @@ export async function updateCategory(id: string, _prev: CategoryState, formData:
 
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
   // The home page renders a tile per category, so its names and order go
   // stale too — updateCategoryImage already refreshed it, these did not.
   revalidatePath("/");
@@ -127,6 +129,7 @@ export async function updateCategoryImage(
     await cleanup(category.imageUrl);
     revalidatePath("/admin/categories");
     revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
     revalidatePath("/");
     return { ok: true, message: "Photo removed." };
   }
@@ -171,6 +174,7 @@ export async function updateCategoryImage(
 
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
   revalidatePath("/");
   return { ok: true, message: "Photo updated." };
 }
@@ -194,6 +198,7 @@ export async function deleteCategory(formData: FormData) {
   await cleanup(doomed?.imageUrl);
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
   revalidatePath("/");
 }
 
@@ -219,5 +224,6 @@ export async function moveCategory(formData: FormData) {
 
   revalidatePath("/admin/categories");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
   revalidatePath("/");
 }

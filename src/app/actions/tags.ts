@@ -51,6 +51,7 @@ export async function createTag(_prev: TagState, formData: FormData): Promise<Ta
   revalidatePath("/admin/categories");
   revalidatePath("/admin/menu");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
   return { ok: true };
 }
 
@@ -65,6 +66,7 @@ export async function deleteTag(formData: FormData) {
   revalidatePath("/admin/categories");
   revalidatePath("/admin/menu");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
 }
 
 /** Creates any of the common tags that are missing. Existing ones are left alone. */
@@ -82,4 +84,5 @@ export async function addDefaultTags() {
   revalidatePath("/admin/categories");
   revalidatePath("/admin/menu");
   revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
 }
