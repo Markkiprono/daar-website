@@ -15,6 +15,12 @@ export type MenuItemForCard = {
   blurDataUrl: string | null;
   isAvailable: boolean;
   tags: Tag[];
+  /** What the card advertises — the base price, or the cheapest size. */
+  fromCents: number;
+  /** Whether a choice can actually move the price, i.e. write "from". */
+  hasChoices: boolean;
+  /** Names only, and only so search can match "caramel" to a cappuccino. */
+  optionNames: string[];
 };
 
 /**
@@ -65,7 +71,14 @@ export function MenuItemCard({ item, priority = false }: { item: MenuItemForCard
           {item.name}
         </h3>
         <span className="shrink-0 font-[family-name:var(--font-label)] text-sm tracking-[0.06em] text-daar-oxblood">
-          {formatPrice(item.priceCents)}
+          {/* "from" only when a choice can move the number — otherwise every
+              card ends up hedged and the word stops meaning anything. */}
+          {item.hasChoices && (
+            <span className="mr-1 text-[0.75em] uppercase tracking-[0.14em] text-daar-muted">
+              from
+            </span>
+          )}
+          {formatPrice(item.fromCents)}
         </span>
       </div>
 

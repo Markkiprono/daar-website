@@ -33,7 +33,18 @@ export const getMenu = cache(async () => {
       include: {
         items: {
           orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-          include: { tags: { include: { tag: true } } },
+          include: {
+            tags: { include: { tag: true } },
+            // Only so a card can say "from" and so search can match a
+            // flavour name. The card never renders the choices themselves.
+            optionGroups: {
+              orderBy: { displayOrder: "asc" },
+              include: { group: { include: { options: { orderBy: { displayOrder: "asc" } } } } },
+            },
+            // Exactly which of the attached groups' choices this item
+            // offers — no fries on a croissant, though Extras carries them.
+            offeredOptions: { select: { optionId: true } },
+          },
         },
       },
     })

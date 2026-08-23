@@ -5,6 +5,7 @@ import { MenuBrowser } from "@/components/site/MenuBrowser";
 import { getMenu, getSettings } from "@/lib/menu";
 import { menuJsonLd, jsonLdString, socialImage } from "@/lib/seo";
 import { SITE } from "@/lib/config";
+import { changesPrice, startingCents, type PickerGroup } from "@/lib/options";
 
 export const revalidate = 60;
 
@@ -73,7 +74,36 @@ export default async function MenuPage() {
               slug: c.slug,
               name: c.name,
               description: c.description,
-              items: c.items,
+              items: c.items.map((item) => {
+                // Shaped here rather than in the browser: only the names and
+                // two numbers need to cross to the client, not every option
+                // row for every item on the menu.
+                const offered = new Set(item.offeredOptions.map((o) => o.optionId));
+                const groups: PickerGroup[] = item.optionGroups.map(({ group }) => ({
+                  id: group.id,
+                  name: group.name,
+                  select: group.select,
+                  pricing: group.pricing,
+                  helpText: group.helpText,
+                  options: group.options
+                    .filter((o) => offered.has(o.id))
+                    .map((o) => ({
+                      id: o.id,
+                      name: o.name,
+                      priceCents: o.priceCents,
+                      isAvailable: o.isAvailable,
+                    })),
+                }));
+
+                return {
+                  ...item,
+                  fromCents: startingCents(item.priceCents, groups),
+                  hasChoices: changesPrice(groups),
+                  optionNames: groups.flatMap((g) =>
+                    g.options.filter((o) => o.isAvailable).map((o) => o.name),
+                  ),
+                };
+              }),
             }))}
           />
         )}

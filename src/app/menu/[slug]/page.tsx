@@ -11,6 +11,8 @@ import { db } from "@/lib/db";
 import { getSettings } from "@/lib/menu";
 import { formatPrice, SITE } from "@/lib/config";
 import { menuItemJsonLd, jsonLdString } from "@/lib/seo";
+import { ItemOptions } from "@/components/site/ItemOptions";
+import { changesPrice, startingCents, type PickerGroup } from "@/lib/options";
 
 export const revalidate = 60;
 
@@ -38,7 +40,17 @@ const getItem = async (slug: string) =>
     .findFirst({
       // Hiding a category must hide its items' pages too, not just the listing.
       where: { slug, category: { isVisible: true } },
-      include: { category: true, tags: { include: { tag: true } } },
+      include: {
+        category: true,
+        tags: { include: { tag: true } },
+        // Ordered here rather than in the component: the printed menu and the
+        // picker must list the choices in the same order the owner set.
+        optionGroups: {
+          orderBy: { displayOrder: "asc" },
+          include: { group: { include: { options: { orderBy: { displayOrder: "asc" } } } } },
+        },
+        offeredOptions: { select: { optionId: true } },
+      },
     })
     .catch(() => null);
 
@@ -70,6 +82,28 @@ export async function generateMetadata({
 export default async function MenuItemPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [item, settings] = await Promise.all([getItem(slug), getSettings()]);
+
+  // A group supplies the question; only the ticked choices are its answers.
+  const offered = new Set((item?.offeredOptions ?? []).map((o) => o.optionId));
+
+  const optionGroups: PickerGroup[] = (item?.optionGroups ?? [])
+    .map(({ group }) => ({
+      id: group.id,
+      name: group.name,
+      select: group.select,
+      pricing: group.pricing,
+      helpText: group.helpText,
+      options: group.options
+        .filter((o) => offered.has(o.id))
+        .map((o) => ({
+          id: o.id,
+          name: o.name,
+          priceCents: o.priceCents,
+          isAvailable: o.isAvailable,
+        })),
+    }))
+    // A group with nothing ticked would render as a bare heading.
+    .filter((g) => g.options.length > 0);
   if (!item) notFound();
 
   const badges = item.tags.filter((t) => t.tag.kind === "BADGE");
@@ -195,7 +229,14 @@ export default async function MenuItemPage({ params }: { params: Promise<{ slug:
               </h1>
 
               <p className="mt-4 font-[family-name:var(--font-label)] text-[clamp(1.25rem,3vw,1.6rem)] tracking-[0.06em] text-daar-oxblood">
-                {formatPrice(item.priceCents)}
+                {/* "from" only when a choice can actually move the number — a
+                    group of free choices must not hedge the price. */}
+                {changesPrice(optionGroups) && (
+                  <span className="mr-1.5 text-[0.7em] uppercase tracking-[0.16em] text-daar-muted">
+                    from
+                  </span>
+                )}
+                {formatPrice(startingCents(item.priceCents, optionGroups))}
               </p>
 
               {item.description && (
@@ -236,6 +277,10 @@ export default async function MenuItemPage({ params }: { params: Promise<{ slug:
                 <p className="mt-7 rounded-[3px] border border-daar-rule bg-white px-4 py-3 text-sm text-daar-muted">
                   This one has sold out for today — it&apos;s usually back tomorrow morning.
                 </p>
+              )}
+
+              {optionGroups.length > 0 && (
+                <ItemOptions baseCents={item.priceCents} groups={optionGroups} />
               )}
 
               <div className="mt-9 flex flex-wrap gap-3">

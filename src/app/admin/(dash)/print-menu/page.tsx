@@ -112,6 +112,34 @@ export default async function PrintMenuPage() {
                             {dietary.join(" · ")}
                           </p>
                         )}
+
+                        {/* Paper cannot be tapped, so every choice is spelled
+                            out under the item — this is the sheet the counter
+                            reads prices off. */}
+                        {item.optionGroups.map(({ group }) => {
+                          const on = new Set(item.offeredOptions.map((o) => o.optionId));
+                          const choices = group.options.filter(
+                            (o) => o.isAvailable && on.has(o.id),
+                          );
+                          if (choices.length === 0) return null;
+
+                          return (
+                            <p key={group.id} className="mt-0.5 text-sm text-neutral-600">
+                              <span className="text-[0.65rem] uppercase tracking-[0.14em] text-neutral-500">
+                                {group.name}
+                              </span>{" "}
+                              {choices
+                                .map((o) =>
+                                  group.pricing === "ABSOLUTE"
+                                    ? `${o.name} ${formatPrice(o.priceCents, { withCode: false })}`
+                                    : o.priceCents === 0
+                                      ? o.name
+                                      : `${o.name} +${formatPrice(o.priceCents, { withCode: false })}`,
+                                )
+                                .join(" · ")}
+                            </p>
+                          );
+                        })}
                       </div>
                       <p className="shrink-0 tabular-nums">{formatPrice(item.priceCents)}</p>
                     </li>

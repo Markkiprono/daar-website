@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/dal";
 import { updateMenuItem } from "@/app/actions/menu";
 import { MenuItemForm } from "@/components/admin/MenuItemForm";
+import { summarise } from "@/lib/options";
 
 export default async function EditMenuItemPage({ params }: { params: Promise<{ id: string }> }) {
   // Must precede every query — see the note in menu/page.tsx.
@@ -12,11 +13,23 @@ export default async function EditMenuItemPage({ params }: { params: Promise<{ i
   // Next 15+ : route params are async.
   const { id } = await params;
 
-  const [item, categories, tags] = await Promise.all([
-    db.menuItem.findUnique({ where: { id }, include: { tags: true } }),
+  const [item, categories, tags, optionGroups] = await Promise.all([
+    db.menuItem.findUnique({ where: { id }, include: { tags: true, optionGroups: true, offeredOptions: true } }),
     db.category.findMany({ orderBy: { displayOrder: "asc" }, select: { id: true, name: true } }),
     db.tag.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, kind: true } }),
+    db.optionGroup.findMany({
+      orderBy: { displayOrder: "asc" },
+      include: { options: { orderBy: { displayOrder: "asc" } } },
+    }),
   ]);
+
+  const groupOptions = optionGroups.map((g) => ({
+    id: g.id,
+    name: g.name,
+    summary: summarise(g.select, g.pricing),
+    pricing: g.pricing,
+    options: g.options.map((o) => ({ id: o.id, name: o.name, priceCents: o.priceCents })),
+  }));
 
   if (!item) notFound();
 
@@ -36,6 +49,7 @@ export default async function EditMenuItemPage({ params }: { params: Promise<{ i
         action={action}
         categories={categories}
         tags={tags}
+        optionGroups={groupOptions}
         submitLabel="Save changes"
         values={{
           name: item.name,
@@ -47,6 +61,10 @@ export default async function EditMenuItemPage({ params }: { params: Promise<{ i
           displayOrder: item.displayOrder,
           imageUrl: item.imageUrl,
           tagIds: item.tags.map((t) => t.tagId),
+          optionGroupIds: item.optionGroups
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .map((g) => g.groupId),
+          offeredOptionIds: item.offeredOptions.map((o) => o.optionId),
         }}
       />
     </div>

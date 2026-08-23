@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { assertAdmin } from "@/lib/dal";
 import { getStorage, buildKey } from "@/lib/storage";
 import { processMenuImage, MAX_UPLOAD_BYTES, ACCEPTED_TYPES } from "@/lib/images";
+import { OptionPricing } from "@/generated/prisma/client";
 
 export type ActionState = { error?: string; ok?: boolean } | undefined;
 
@@ -89,6 +90,63 @@ async function syncTags(menuItemId: string, tagIds: string[]) {
   });
 }
 
+/**
+ * Which shared option groups this item offers. The tick order becomes the
+ * order they appear on the item page, so beans can precede flavour on a
+ * coffee while extras come first on a sandwich.
+ */
+async function syncOptionGroups(menuItemId: string, groupIds: string[]) {
+  await db.menuItemOptionGroup.deleteMany({ where: { menuItemId } });
+  if (groupIds.length === 0) return;
+  await db.menuItemOptionGroup.createMany({
+    data: groupIds.map((groupId, i) => ({ menuItemId, groupId, displayOrder: i })),
+    skipDuplicates: true,
+  });
+}
+
+/**
+ * Which individual choices this item offers.
+ *
+ * Nothing is offered until it is ticked. A shared group supplies the question;
+ * this decides that item's answers, so Extras can carry fries without a
+ * croissant ever offering them.
+ *
+ * Only choices belonging to a group actually attached to the item are kept —
+ * otherwise unticking a group would leave its choices behind as orphans that
+ * reappear the moment the group was ticked again.
+ */
+async function syncOptionChoices(menuItemId: string, groupIds: string[], offeredIds: string[]) {
+  await db.menuItemOptionChoice.deleteMany({ where: { menuItemId } });
+  if (groupIds.length === 0 || offeredIds.length === 0) return;
+
+  const valid = await db.option.findMany({
+    where: { id: { in: offeredIds }, groupId: { in: groupIds } },
+    select: { id: true },
+  });
+  if (valid.length === 0) return;
+
+  await db.menuItemOptionChoice.createMany({
+    data: valid.map((o) => ({ menuItemId, optionId: o.id })),
+    skipDuplicates: true,
+  });
+}
+
+/**
+ * Two ABSOLUTE groups on one item would both claim to replace the base price,
+ * so the total would depend on whichever row came back last. Refused at save
+ * time rather than resolved arbitrarily at render time.
+ */
+async function absolutePricingClash(groupIds: string[]): Promise<boolean> {
+  if (groupIds.length < 2) return false;
+  const sized = await db.optionGroup.count({
+    where: { id: { in: groupIds }, pricing: OptionPricing.ABSOLUTE },
+  });
+  return sized > 1;
+}
+
+const SIZED_CLASH =
+  "Only one group can set the price outright — the rest must be add-ons.";
+
 export async function createMenuItem(_prev: ActionState, formData: FormData): Promise<ActionState> {
   await assertAdmin();
 
@@ -96,6 +154,9 @@ export async function createMenuItem(_prev: ActionState, formData: FormData): Pr
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
   const d = parsed.data;
+  const groupIds = formData.getAll("optionGroupIds").map(String);
+  const offeredOptionIds = formData.getAll("offeredOptionIds").map(String);
+  if (await absolutePricingClash(groupIds)) return { error: SIZED_CLASH };
 
   // Everything that can fail lives in here. redirect() throws NEXT_REDIRECT
   // internally, so it must stay OUTSIDE the try or the catch swallows it and
@@ -129,9 +190,12 @@ export async function createMenuItem(_prev: ActionState, formData: FormData): Pr
     });
 
     await syncTags(item.id, formData.getAll("tagIds").map(String));
+    await syncOptionGroups(item.id, groupIds);
+    await syncOptionChoices(item.id, groupIds, offeredOptionIds);
 
     revalidatePath("/admin/menu");
     revalidatePath("/menu");
+    revalidatePath("/menu/[slug]", "page");
     revalidatePath("/");
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not save this item." };
@@ -150,6 +214,9 @@ export async function updateMenuItem(id: string, _prev: ActionState, formData: F
   if (!existing) return { error: "That item no longer exists." };
 
   const d = parsed.data;
+  const groupIds = formData.getAll("optionGroupIds").map(String);
+  const offeredOptionIds = formData.getAll("offeredOptionIds").map(String);
+  if (await absolutePricingClash(groupIds)) return { error: SIZED_CLASH };
 
   // See the note in createMenuItem: redirect() must stay outside the try.
   try {
@@ -183,9 +250,12 @@ export async function updateMenuItem(id: string, _prev: ActionState, formData: F
     });
 
     await syncTags(id, formData.getAll("tagIds").map(String));
+    await syncOptionGroups(id, groupIds);
+    await syncOptionChoices(id, groupIds, offeredOptionIds);
 
     revalidatePath("/admin/menu");
     revalidatePath("/menu");
+    revalidatePath("/menu/[slug]", "page");
     revalidatePath("/");
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Could not save this item." };

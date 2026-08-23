@@ -9,9 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { rejectionReason, MAX_PHOTO_MB } from "@/lib/image-rules";
+import { formatPrice } from "@/lib/config";
 
 type Option = { id: string; name: string };
 type TagOption = Option & { kind: string };
+type GroupChoice = Option & { priceCents: number };
+type GroupOption = Option & {
+  summary: string;
+  pricing: "SURCHARGE" | "ABSOLUTE";
+  options: GroupChoice[];
+};
 
 export type MenuItemFormValues = {
   name?: string;
@@ -24,24 +31,34 @@ export type MenuItemFormValues = {
   displayOrder?: number;
   imageUrl?: string | null;
   tagIds?: string[];
+  optionGroupIds?: string[];
+  offeredOptionIds?: string[];
 };
 
 export function MenuItemForm({
   action,
   categories,
   tags,
+  optionGroups,
   values,
   submitLabel,
 }: {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   categories: Option[];
   tags: TagOption[];
+  optionGroups: GroupOption[];
   values?: MenuItemFormValues;
   submitLabel: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionState, FormData>(action, undefined);
   const [preview, setPreview] = useState<string | null>(values?.imageUrl ?? null);
   const [fileError, setFileError] = useState<string | null>(null);
+
+  // Controlled so ticking a group can reveal its individual choices. Without
+  // that, attaching "Extras" would silently put every extra on the item —
+  // fries on a croissant.
+  const [activeGroups, setActiveGroups] = useState<string[]>(values?.optionGroupIds ?? []);
+  const offered = new Set(values?.offeredOptionIds ?? []);
 
   const MAX_MB = MAX_PHOTO_MB;
 
@@ -232,6 +249,92 @@ export function MenuItemForm({
           ))}
         </div>
       </fieldset>
+      )}
+
+      {/* Ticking a group puts the picker on the item page; the choices beneath
+          it decide which of that group's options this particular item offers.
+          Nothing is ticked to begin with: a group can be shared by items that
+          offer only some of its choices. */}
+      {optionGroups.length > 0 && (
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-medium">Choices</legend>
+          <p className="text-xs text-neutral-500">
+            Beans, flavours, extras. The item keeps one photo and one base price; these move the
+            price as the customer picks. Tick a group, then tick only the choices this item
+            actually offers — nothing is offered until you tick it.
+          </p>
+
+          <div className="space-y-2">
+            {optionGroups.map((g) => {
+              const on = activeGroups.includes(g.id);
+
+              return (
+                <div
+                  key={g.id}
+                  className={[
+                    "rounded-lg border p-3 transition",
+                    on ? "border-[#481819] bg-[#481819]/[0.03]" : "border-neutral-300",
+                  ].join(" ")}
+                >
+                  <label className="flex cursor-pointer items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      name="optionGroupIds"
+                      value={g.id}
+                      checked={on}
+                      onChange={(e) =>
+                        setActiveGroups((prev) =>
+                          e.target.checked ? [...prev, g.id] : prev.filter((id) => id !== g.id),
+                        )
+                      }
+                      className="mt-0.5 h-4 w-4 accent-[#481819]"
+                    />
+                    <span>
+                      <span className="text-sm font-medium">{g.name}</span>
+                      <span className="ml-2 text-xs text-neutral-500">{g.summary}</span>
+                    </span>
+                  </label>
+
+                  {on &&
+                    (g.options.length === 0 ? (
+                      <p className="mt-2 pl-7 text-xs text-neutral-500">
+                        This group has no choices yet — add them under{" "}
+                        <a href="/admin/options" className="text-[#481819] underline underline-offset-2">
+                          Options
+                        </a>
+                        .
+                      </p>
+                    ) : (
+                      <div className="mt-2.5 flex flex-wrap gap-2 pl-7">
+                        {g.options.map((o) => (
+                          <label
+                            key={o.id}
+                            className="flex cursor-pointer items-center gap-2 rounded-full border border-neutral-300 bg-white px-3 py-1.5 text-sm has-[:checked]:border-[#481819] has-[:checked]:bg-[#481819] has-[:checked]:text-white"
+                          >
+                            <input
+                              type="checkbox"
+                              name="offeredOptionIds"
+                              value={o.id}
+                              defaultChecked={offered.has(o.id)}
+                              className="sr-only"
+                            />
+                            {o.name}
+                            {o.priceCents !== 0 && (
+                              <span className="text-[11px] opacity-70">
+                                {g.pricing === "ABSOLUTE"
+                                  ? formatPrice(o.priceCents, { withCode: false })
+                                  : `+${formatPrice(o.priceCents, { withCode: false })}`}
+                              </span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    ))}
+                </div>
+              );
+            })}
+          </div>
+        </fieldset>
       )}
 
       <div className="space-y-4 rounded-lg border border-neutral-200 bg-white p-4">

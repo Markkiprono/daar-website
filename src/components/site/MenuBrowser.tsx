@@ -53,6 +53,9 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
               c.name,
               c.description ?? "",
               ...item.tags.map((t) => t.tag.name),
+              // "caramel" should find the cappuccino, even though no item is
+              // called that — the flavour only exists as one of its choices.
+              ...item.optionNames,
               item.isAvailable ? "available" : "sold out",
             ].join(" "),
           ),

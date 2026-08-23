@@ -34,8 +34,8 @@ model Category {
   imageWidth  Int?
   imageHeight Int?
   blurDataUrl String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([displayOrder])
 }
@@ -65,9 +65,11 @@ model MenuItem {
   isFeatured   Boolean @default(false) // drives "Chef's Special" on the home page
   displayOrder Int     @default(0)
 
-  tags  MenuItemTag[]
-  views MenuItemView[]
-  stats DailyItemStat[]
+  tags           MenuItemTag[]
+  optionGroups   MenuItemOptionGroup[]
+  offeredOptions MenuItemOptionChoice[]
+  views          MenuItemView[]
+  stats          DailyItemStat[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,6 +106,114 @@ model MenuItemTag {
 
   @@id([menuItemId, tagId])
   @@index([tagId])
+}
+
+// ------------------------------------------------------------
+//  ITEM OPTIONS
+//  One item, one photo, several prices. A cappuccino is still a
+//  cappuccino whether the beans are Kenyan or Brazilian, so those live
+//  here as choices rather than as separate menu items with the same
+//  photograph.
+//
+//  Groups are shared: "Extras" is defined once and ticked onto every
+//  item it applies to, so adding "extra avocado" reaches all of them at
+//  once and cannot drift to a different price on one sandwich.
+//
+//  Nothing here is ever ordered or paid for — the menu has no cart. The
+//  customer builds a price on the item page, sees it, and orders at the
+//  counter. Selections are browser-only and die with the page.
+// ------------------------------------------------------------
+
+enum OptionPricing {
+  /// Added to the item's base price: caramel +80.
+  SURCHARGE
+  /// Replaces the base price: a large is 420, not "regular plus 120".
+  ABSOLUTE
+}
+
+enum OptionSelect {
+  /// Radio. You cannot have Kenyan and Brazilian beans in one cup.
+  ONE
+  /// Checkbox. Extra egg and extra cheese, both at once.
+  MANY
+}
+
+model OptionGroup {
+  id      String        @id @default(cuid())
+  name    String // "Coffee beans", "Flavour", "Extras"
+  slug    String        @unique
+  select  OptionSelect  @default(ONE)
+  pricing OptionPricing @default(SURCHARGE)
+
+  /// Sits under the group heading on the item page, e.g. "Choose your origin".
+  helpText String?
+
+  displayOrder Int @default(0)
+
+  options Option[]
+  items   MenuItemOptionGroup[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([displayOrder])
+}
+
+model Option {
+  id      String      @id @default(cuid())
+  groupId String
+  group   OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  name String // "Brazil", "Caramel", "Extra egg"
+
+  /// Minor units, like MenuItem.priceCents. Read according to the group's
+  /// pricing mode: added to the base under SURCHARGE, replacing it under
+  /// ABSOLUTE. Zero is legitimate — the house bean costs nothing extra.
+  priceCents Int @default(0)
+
+  displayOrder Int     @default(0)
+  isAvailable  Boolean @default(true)
+
+  offeredOn MenuItemOptionChoice[]
+
+  @@index([groupId, displayOrder])
+}
+
+/// Which groups apply to which items. displayOrder lives here, not on the
+/// group, so beans can come before flavour on a coffee while extras come
+/// first on a sandwich — without duplicating the groups themselves.
+model MenuItemOptionGroup {
+  menuItemId String
+  groupId    String
+  menuItem   MenuItem    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  group      OptionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  displayOrder Int @default(0)
+
+  @@id([menuItemId, groupId])
+  @@index([groupId])
+}
+
+/// Exactly which choices one item offers.
+///
+/// An attached group supplies the question ("which beans?"); this table
+/// supplies that item's answers. Nothing is offered until it is ticked, so a
+/// group can be reused across items that share only some of its choices —
+/// Extras carries fries, but a croissant never offers them.
+///
+/// The trade-off, deliberately taken: a choice added to a group later appears
+/// on no item until someone ticks it. That is the price of "nothing is on the
+/// menu unless I put it there", which is the safer default for a café — a
+/// choice that silently appears on every item is how a customer is offered
+/// something the kitchen cannot make.
+model MenuItemOptionChoice {
+  menuItemId String
+  optionId   String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  option     Option   @relation(fields: [optionId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, optionId])
+  @@index([optionId])
 }
 
 // ------------------------------------------------------------
@@ -193,9 +303,9 @@ model SiteSettings {
   latitude   String?
   longitude  String?
   priceRange String?
-  phone       String?
-  whatsapp    String?
-  email       String?
+  phone      String?
+  whatsapp   String?
+  email      String?
 
   /// { instagram, tiktok, facebook, ... }
   socials Json @default("{}")
