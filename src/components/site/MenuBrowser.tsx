@@ -70,6 +70,55 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
   const filtering = searching || activeCat !== null;
 
   /**
+   * Keep the highlighted chip on screen.
+   *
+   * The highlight tracks the section being read, so on a long menu it walks
+   * off the end of the strip and the "you are here" marker vanishes exactly
+   * when it is most useful. This nudges the strip by the smallest amount that
+   * brings the chip back into view — scrollBy on the strip itself, never
+   * scrollIntoView, which would drag the whole page around under the reader.
+   */
+  const activeSlug = filtering ? activeCat : scrolledCat;
+
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el || !activeSlug) return;
+    // Never yank the strip out from under someone mid-drag.
+    if (drag.current.active) return;
+
+    const chip = el.querySelector<HTMLElement>(`[data-cat="${CSS.escape(activeSlug)}"]`);
+    if (!chip) return;
+
+    // Enough to clear the edge fade, so the chip is readable and not half
+    // under a gradient.
+    const PAD = 48;
+    const view = el.clientWidth;
+    const box = chip.getBoundingClientRect();
+    const strip = el.getBoundingClientRect();
+
+    // Absolute target, not a relative nudge. The highlight can change several
+    // times during one flick of the page, and a relative scrollBy issued while
+    // the previous smooth scroll is still animating measures a moving target
+    // and compounds. Recomputing an absolute position converges instead.
+    const chipStart = box.left - strip.left + el.scrollLeft;
+    const chipEnd = chipStart + box.width;
+
+    let target = el.scrollLeft;
+    if (chipStart - PAD < el.scrollLeft) target = chipStart - PAD;
+    else if (chipEnd + PAD > el.scrollLeft + view) target = chipEnd + PAD - view;
+
+    target = Math.max(0, Math.min(target, el.scrollWidth - view));
+    if (Math.abs(target - el.scrollLeft) < 2) return;
+
+    el.scrollTo({
+      left: target,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  }, [activeSlug]);
+
+  /**
    * Build the searchable text once per item.
    *
    * Includes the category name and every tag, so "vegetarian" or "pastries"
@@ -270,6 +319,7 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
                 <button
                   key={c.slug}
                   type="button"
+                  data-cat={c.slug}
                   onClick={() => {
                     if (searching || activeCat !== null) {
                       // Filtering: tapping the active chip clears it.
