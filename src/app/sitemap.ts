@@ -1,15 +1,27 @@
 import type { MetadataRoute } from "next";
+import { connection } from "next/server";
 import { db } from "@/lib/db";
 import { SITE } from "@/lib/config";
 
 /**
  * Every indexable page, so Google discovers new menu items without having to
- * find a link to them. Regenerated at most once an hour — menu edits are not
- * so urgent that crawlers need them sooner.
+ * find a link to them.
+ *
+ * Built at request time, not at build time, and that is the whole point. A
+ * sitemap is a cached Route Handler by default, so this used to be rendered
+ * during `docker build` — where there is deliberately no database. The query
+ * threw, the catch below turned that into an empty list, and an image was
+ * shipped whose sitemap advertised six static pages and not one menu item.
+ * Every deploy silently re-broke it.
+ *
+ * connection() stops prerendering, so the query runs against a live database
+ * on a real request. Crawlers fetch this a handful of times a day and it is
+ * one indexed SELECT over a hundred-odd rows, so there is nothing to save by
+ * caching it.
  */
-export const revalidate = 3600;
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await connection();
+
   let items: { slug: string; updatedAt: Date }[] = [];
   try {
     items = await db.menuItem.findMany({
