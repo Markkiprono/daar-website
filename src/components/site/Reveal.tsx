@@ -16,11 +16,14 @@ export function Reveal({
   as: Tag = "div",
   className = "",
   delay = 0,
+  rise = false,
 }: {
   children: ReactNode;
   as?: ElementType;
   className?: string;
   delay?: number;
+  /** Further and slower — for photographs, which carry the movement. */
+  rise?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
 
@@ -60,7 +63,7 @@ export function Reveal({
   }, [delay]);
 
   return (
-    <Tag ref={ref} className={`daar-reveal ${className}`}>
+    <Tag ref={ref} className={`${rise ? "daar-rise" : "daar-reveal"} ${className}`}>
       {children}
     </Tag>
   );

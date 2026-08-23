@@ -48,7 +48,10 @@ export function HeroMedia({
   alt: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const box = useRef<HTMLDivElement>(null);
   const [playing, setPlaying] = useState(false);
+  // Nothing is fetched until the section is nearly on screen.
+  const [near, setNear] = useState(false);
 
   // Read as external state rather than copied into state from an effect: the
   // preference lives in the browser, can change while the page is open, and
@@ -57,16 +60,48 @@ export function HeroMedia({
   const mayPlay = useSyncExternalStore(subscribeToMotion, motionAllowed, () => false);
   const wanted = Boolean(video) && mayPlay;
 
+  /**
+   * Load and play only around the time it is seen.
+   *
+   * This section can sit at the foot of a long page, and the file is measured
+   * in megabytes: fetching it for every visitor, including the ones who never
+   * scroll that far, is somebody's mobile data spent on nothing. The observer
+   * decides when it is worth having, and pauses it again on the way out —
+   * a loop running under content nobody is looking at is just battery.
+   */
   useEffect(() => {
-    const el = ref.current;
+    const el = box.current;
     if (!el || !wanted) return;
-    // Autoplay rejection is a promise rejection, not an error event, and an
-    // unhandled one is noise in the console for something we handle by design.
-    void el.play().catch(() => setPlaying(false));
+
+    // No observer: the film simply never loads and the photograph stands in,
+    // which is where every other failure here lands too. Not worth a second
+    // code path for browsers that predate the API.
+    if (!("IntersectionObserver" in window)) return;
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        setNear((was) => was || entry.isIntersecting);
+        const video = ref.current;
+        if (!video) return;
+        if (entry.isIntersecting) {
+          // Autoplay rejection is a promise rejection, not an error event, and
+          // an unhandled one is console noise for something handled by design.
+          void video.play().catch(() => setPlaying(false));
+        } else {
+          video.pause();
+        }
+      },
+      // A screen of warning, so it is ready by the time it is looked at.
+      { rootMargin: "100% 0px" },
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
   }, [wanted]);
 
   return (
-    <div className="absolute inset-0">
+    <div ref={box} className="absolute inset-0">
       <Image
         src={image}
         alt={alt}
@@ -76,14 +111,20 @@ export function HeroMedia({
         className="object-cover"
       />
 
-      {video && wanted && (
+      {video && wanted && near && (
         <video
           ref={ref}
           src={video}
           muted
           loop
           playsInline
-          preload="metadata"
+          // Autoplay, not a play() call from the observer. The element only
+          // mounts once the section is near, so on that first crossing the ref
+          // is still null and an observer-driven play() lands on nothing — the
+          // film arrived and sat there on its first frame. The observer keeps
+          // handling every crossing after this one.
+          autoPlay
+          preload="auto"
           aria-hidden
           tabIndex={-1}
           onPlaying={() => setPlaying(true)}

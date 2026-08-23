@@ -314,6 +314,65 @@ body {
   }
 }
 
+/* Two bands of photographs drifting in opposite directions. The track holds
+   the list twice, so translating exactly half its width loops seamlessly. */
+.daar-marquee {
+  width: max-content;
+  animation: daar-marquee 64s linear infinite;
+}
+.daar-marquee.is-reverse {
+  animation-name: daar-marquee-back;
+}
+/* Hovering to look at a plate should not mean chasing it. */
+.daar-marquee-wrap:hover .daar-marquee {
+  animation-play-state: paused;
+}
+@keyframes daar-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+@keyframes daar-marquee-back {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Stopped, but still scrollable by hand — otherwise half the photographs
+     are simply unreachable. */
+  .daar-marquee {
+    animation: none;
+    width: auto;
+  }
+}
+
+/* A card arriving: further and slower than the standard reveal, because a
+   photograph carries the movement where a line of text cannot. */
+.js .daar-rise {
+  opacity: 0;
+  transform: translateY(46px) scale(0.97);
+  transition:
+    opacity 1s var(--daar-ease),
+    transform 1s var(--daar-ease);
+}
+.js .daar-rise.is-in {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .daar-rise {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Cross-fading frames behind the staged type. Opacity only — the images are
    all laid on top of each other, so nothing reflows as they change. */
 .daar-frame {

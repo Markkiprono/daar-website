@@ -279,7 +279,7 @@ model SiteSettings {
   heroImageUrl String?
   heroVideoUrl String?
 
-  storyTitle    String  @default("A door on Ngong Road")
+  storyTitle    String  @default("Daar means home")
   storyBody     String  @default("")
   storyImageUrl String?
 

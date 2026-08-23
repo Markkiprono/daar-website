@@ -52,6 +52,24 @@ export const getMenu = cache(async () => {
     .catch(survive("getMenu", [] as never[]));
 });
 
+/**
+ * A handful of real plates for the home-page gallery.
+ *
+ * Only items that actually have a photograph — a strip of grey placeholders
+ * is worse than a shorter strip. Availability is ignored on purpose: this is
+ * a look at what the kitchen makes, not a list of what is left today.
+ */
+export const getGallery = cache(async () => {
+  return db.menuItem
+    .findMany({
+      where: { imageUrl: { not: null }, category: { isVisible: true } },
+      orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
+      take: 10,
+      select: { id: true, name: true, imageUrl: true, imageAlt: true, blurDataUrl: true },
+    })
+    .catch(survive("getGallery", [] as never[]));
+});
+
 export const getFeatured = cache(async () => {
 
   return db.menuItem

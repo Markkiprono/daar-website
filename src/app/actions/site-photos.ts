@@ -99,19 +99,21 @@ export async function updateSitePhoto(_prev: PhotoState, formData: FormData): Pr
 // ------------------------------------------------------------
 
 /**
- * The looping film behind the hero.
+ * The looping film near the foot of the home page.
  *
  * heroVideoUrl has existed on SiteSettings since the beginning with nothing
- * to set it and nothing to render it — this is the missing half.
+ * to set it and nothing to render it — this is the missing half. The name is
+ * kept rather than migrated: it is one column, and renaming it would cost a
+ * migration to buy nothing.
  *
  * Stored byte-for-byte rather than re-encoded: there is no ffmpeg in the
  * image, and re-encoding video is not something to do inside a request. That
  * puts the burden on the file being sensible before it is uploaded, which is
  * what the limit and the guidance on the form are for.
  *
- * The hero photo is kept whatever happens. It is the poster frame while the
- * video loads, the fallback when a browser refuses to autoplay, and what
- * anyone on Reduce Motion sees instead — so a video never replaces it.
+ * A still photograph sits under it as the poster frame, the fallback when a
+ * browser refuses to autoplay, and what anyone on Reduce Motion or Save-Data
+ * gets instead. With no video the section is not rendered at all.
  */
 export async function updateHeroVideo(_prev: PhotoState, formData: FormData): Promise<PhotoState> {
   await assertAdmin();
@@ -130,7 +132,7 @@ export async function updateHeroVideo(_prev: PhotoState, formData: FormData): Pr
     });
     await cleanup(currentUrl);
     revalidatePublic();
-    return { ok: true, message: "Video removed — the hero photo is back on its own." };
+    return { ok: true, message: "Video removed — that section is now hidden." };
   }
 
   const file = formData.get("video") as File | null;

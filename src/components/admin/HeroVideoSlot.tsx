@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { rejectionReason, MAX_VIDEO_MB } from "@/lib/image-rules";
 
 /**
- * The looping film behind the hero.
+ * The looping film near the foot of the home page.
  *
  * Deliberately a sibling of PhotoSlot rather than a mode of it: the guidance,
  * the preview and the accepted types all differ, and folding a third kind into
  * that component would mean three branches in every line of it.
  *
- * The hero photo is never replaced by this. It is the poster frame while the
+ * A still photograph sits under the film — it is the poster frame while the
  * video loads, the fallback when a browser blocks autoplay, and what a visitor
- * on Reduce Motion sees instead — so removing the video is always safe.
+ * on Reduce Motion or Save-Data sees instead. Removing the video removes the
+ * whole section, so there is never a stranded still.
  */
 export function HeroVideoSlot({ current }: { current: string | null }) {
   const [state, formAction, pending] = useActionState<PhotoState, FormData>(
@@ -27,17 +28,17 @@ export function HeroVideoSlot({ current }: { current: string | null }) {
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-4">
-      <h3 className="text-sm font-medium">Hero video</h3>
+      <h3 className="text-sm font-medium">Film</h3>
       <p className="mt-1 text-xs text-neutral-500">
-        A short loop behind the headline on the home page. Plays silently and repeats, so a few
-        seconds is plenty — the hero photo above stays as the still frame underneath it.
+        A short loop, full width, near the foot of the home page. Plays silently and repeats, so
+        a few seconds is plenty. Remove it and that section disappears entirely.
       </p>
 
       <form
         action={formAction}
         // The real gate — runs even if the change handler below never did.
         onSubmit={(e) => {
-          if (remove) return; // going back to the photo needs no file
+          if (remove) return; // removing the section needs no file
           const input = e.currentTarget.elements.namedItem("video") as HTMLInputElement | null;
           const file = input?.files?.[0];
           const reason = file ? rejectionReason(file, "video") : "Choose a video first.";
@@ -62,7 +63,7 @@ export function HeroVideoSlot({ current }: { current: string | null }) {
         ) : (
           <div className="grid aspect-[16/9] w-full place-items-center rounded-md border border-dashed border-neutral-300 bg-neutral-50">
             <span className="text-xs text-neutral-400">
-              {remove ? "Will use the hero photo" : "No video — the hero photo is used"}
+              {remove ? "Section will be hidden" : "No video — the section is hidden"}
             </span>
           </div>
         )}
@@ -112,7 +113,7 @@ export function HeroVideoSlot({ current }: { current: string | null }) {
               }}
               className="h-4 w-4 accent-[#481819]"
             />
-            Remove and use the hero photo
+            Remove and hide the section
           </label>
         )}
 
