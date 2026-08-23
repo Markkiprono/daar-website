@@ -65,7 +65,7 @@ const nextConfig: NextConfig = {
      * truncated mid-stream and the Server Action fails with "Unexpected end
      * of form". Raised to match the 13 MB Server Action limit below.
      */
-    proxyClientMaxBodySize: "13mb",
+    proxyClientMaxBodySize: "52mb",
 
     serverActions: {
       /**
@@ -73,9 +73,15 @@ const nextConfig: NextConfig = {
        * and src/lib/images.ts accepts up to 12 MB. Next's default cap is
        * 1 MB, which rejects the request before the action ever runs and
        * surfaces as a bare "server error" with no useful message.
+       *
+       * Raised again for the hero video, which src/lib/image-rules.ts caps at
+       * 50 MB. The limit has to clear the largest thing any action accepts or
+       * that upload dies mid-stream, and the failure looks like a broken
+       * dashboard rather than a file that is too big.
+       *
        * Extra headroom covers multipart boundary/header overhead.
        */
-      bodySizeLimit: "13mb",
+      bodySizeLimit: "52mb",
 
       /**
        * Server Actions compare Origin against Host and abort on a mismatch.

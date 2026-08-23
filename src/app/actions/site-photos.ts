@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { assertAdmin } from "@/lib/dal";
 import { getStorage, buildKey } from "@/lib/storage";
 import { processMenuImage, MAX_UPLOAD_BYTES, ACCEPTED_TYPES } from "@/lib/images";
+import { MAX_VIDEO_MB, VIDEO_TYPES } from "@/lib/image-rules";
 
 export type PhotoState = { ok: true; message: string } | { ok: false; error: string } | undefined;
 
@@ -91,6 +92,81 @@ export async function updateSitePhoto(_prev: PhotoState, formData: FormData): Pr
 
   revalidatePublic();
   return { ok: true, message: "Photo updated." };
+}
+
+// ------------------------------------------------------------
+//  Hero video
+// ------------------------------------------------------------
+
+/**
+ * The looping film behind the hero.
+ *
+ * heroVideoUrl has existed on SiteSettings since the beginning with nothing
+ * to set it and nothing to render it — this is the missing half.
+ *
+ * Stored byte-for-byte rather than re-encoded: there is no ffmpeg in the
+ * image, and re-encoding video is not something to do inside a request. That
+ * puts the burden on the file being sensible before it is uploaded, which is
+ * what the limit and the guidance on the form are for.
+ *
+ * The hero photo is kept whatever happens. It is the poster frame while the
+ * video loads, the fallback when a browser refuses to autoplay, and what
+ * anyone on Reduce Motion sees instead — so a video never replaces it.
+ */
+export async function updateHeroVideo(_prev: PhotoState, formData: FormData): Promise<PhotoState> {
+  await assertAdmin();
+
+  const current = await db.siteSettings.findUnique({
+    where: { id: "singleton" },
+    select: { heroVideoUrl: true },
+  });
+  const currentUrl = current?.heroVideoUrl ?? null;
+
+  if (formData.get("remove") === "on") {
+    await db.siteSettings.upsert({
+      where: { id: "singleton" },
+      update: { heroVideoUrl: null },
+      create: { id: "singleton", heroVideoUrl: null },
+    });
+    await cleanup(currentUrl);
+    revalidatePublic();
+    return { ok: true, message: "Video removed — the hero photo is back on its own." };
+  }
+
+  const file = formData.get("video") as File | null;
+  if (!file || file.size === 0) return { ok: false, error: "Choose a video first." };
+
+  if (!VIDEO_TYPES.includes(file.type)) {
+    return {
+      ok: false,
+      error: `That file is ${file.type || "an unknown type"}. Please use an MP4 or WebM — a .mov from a phone needs converting first.`,
+    };
+  }
+  if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+    return {
+      ok: false,
+      error: `That video is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${MAX_VIDEO_MB} MB. A hero loop should be a few seconds and heavily compressed.`,
+    };
+  }
+
+  try {
+    const extension = file.type === "video/webm" ? "webm" : "mp4";
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const storage = await getStorage();
+    const stored = await storage.put(buildKey(`hero.${extension}`, "site"), bytes, file.type);
+
+    await db.siteSettings.upsert({
+      where: { id: "singleton" },
+      update: { heroVideoUrl: stored.url },
+      create: { id: "singleton", heroVideoUrl: stored.url },
+    });
+    await cleanup(currentUrl);
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Upload failed." };
+  }
+
+  revalidatePublic();
+  return { ok: true, message: "Video updated." };
 }
 
 // ------------------------------------------------------------

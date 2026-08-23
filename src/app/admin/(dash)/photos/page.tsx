@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/dal";
 import { Card, CardContent } from "@/components/ui/card";
 import { PhotoSlot } from "@/components/admin/PhotoSlot";
+import { HeroVideoSlot } from "@/components/admin/HeroVideoSlot";
 import { StoryGallery } from "@/components/admin/StoryGallery";
 
 export const dynamic = "force-dynamic";
@@ -37,13 +38,16 @@ export default async function PhotosPage() {
       </div>
 
       <Section title="Home page">
-        <PhotoSlot
-          slot="hero"
-          title="Hero background"
-          description="The full-screen photo behind the headline on the home page. Landscape works best."
-          current={settings?.heroImageUrl ?? null}
-          aspect="aspect-[16/9]"
-        />
+        <div className="space-y-6">
+          <PhotoSlot
+            slot="hero"
+            title="Hero background"
+            description="The full-screen photo behind the headline on the home page. Landscape works best. Kept as the still frame under any video below."
+            current={settings?.heroImageUrl ?? null}
+            aspect="aspect-[16/9]"
+          />
+          <HeroVideoSlot current={settings?.heroVideoUrl ?? null} />
+        </div>
       </Section>
 
       <Section title="Story page">

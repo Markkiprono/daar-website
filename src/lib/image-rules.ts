@@ -12,8 +12,17 @@
 
 export const MAX_PHOTO_MB = 12; // camera originals are big
 export const MAX_FAVICON_MB = 1;
+/**
+ * A hero loop should be a few seconds, muted, and heavily compressed — the
+ * cap is high enough for a decent 1080p clip and low enough to discourage
+ * dropping a raw phone recording on people paying for mobile data.
+ */
+export const MAX_VIDEO_MB = 50;
 
 export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+/** H.264 MP4 plays everywhere; WebM covers the rest. */
+export const VIDEO_TYPES = ["video/mp4", "video/webm"];
+
 export const FAVICON_TYPES = [
   "image/png",
   "image/svg+xml",
@@ -21,21 +30,48 @@ export const FAVICON_TYPES = [
   "image/vnd.microsoft.icon",
 ];
 
-/** The reason this file can't be used, or null when it's fine. */
-export function rejectionReason(file: File, favicon = false): string | null {
-  const types = favicon ? FAVICON_TYPES : PHOTO_TYPES;
-  const maxMB = favicon ? MAX_FAVICON_MB : MAX_PHOTO_MB;
+/** What a given slot will accept. */
+export type UploadKind = "photo" | "favicon" | "video";
 
-  if (!types.includes(file.type)) {
-    // Naming the type it got makes an unexpected HEIC or PDF obvious.
+const RULES: Record<UploadKind, { types: string[]; maxMB: number; noun: string; wanted: string }> = {
+  photo: {
+    types: PHOTO_TYPES,
+    maxMB: MAX_PHOTO_MB,
+    noun: "photo",
+    wanted: "a JPG, PNG or WebP",
+  },
+  favicon: {
+    types: FAVICON_TYPES,
+    maxMB: MAX_FAVICON_MB,
+    noun: "icon",
+    wanted: "a PNG, SVG or ICO",
+  },
+  video: {
+    types: VIDEO_TYPES,
+    maxMB: MAX_VIDEO_MB,
+    noun: "video",
+    wanted: "an MP4 or WebM",
+  },
+};
+
+/**
+ * The reason this file can't be used, or null when it's fine.
+ *
+ * Takes a kind rather than a boolean: with three slots a flag would have to be
+ * read as "not a favicon, therefore a photo", which is exactly how the old
+ * per-form copies drifted apart.
+ */
+export function rejectionReason(file: File, kind: UploadKind = "photo"): string | null {
+  const rule = RULES[kind];
+
+  if (!rule.types.includes(file.type)) {
+    // Naming the type it got makes an unexpected HEIC, MOV or PDF obvious.
     const got = file.type ? ` (${file.type})` : "";
-    return favicon
-      ? `This file isn’t a PNG, SVG or ICO icon${got}.`
-      : `This file isn’t a photo we can use${got}. Please choose a JPG, PNG or WebP.`;
+    return `This file isn’t ${rule.noun === "icon" ? "an icon" : `a ${rule.noun}`} we can use${got}. Please choose ${rule.wanted}.`;
   }
 
-  if (file.size > maxMB * 1024 * 1024) {
-    return `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${maxMB} MB limit. Please choose a smaller ${favicon ? "icon" : "photo"}.`;
+  if (file.size > rule.maxMB * 1024 * 1024) {
+    return `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${rule.maxMB} MB limit. Please choose a smaller ${rule.noun}.`;
   }
 
   return null;

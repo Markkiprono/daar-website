@@ -24,10 +24,15 @@ const CONTENT_TYPES: Record<string, string> = {
   avif: "image/avif",
   gif: "image/gif",
   svg: "image/svg+xml",
+  mp4: "video/mp4",
+  webm: "video/webm",
 };
 
+/** Extensions a browser will stream rather than download in one go. */
+const STREAMABLE = new Set(["mp4", "webm"]);
+
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path: segments } = await params;
@@ -50,20 +55,74 @@ export async function GET(
   }
 
   const ext = (key.split(".").pop() ?? "").toLowerCase();
+  const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
+
+  /**
+   * Range requests, without which video does not work.
+   *
+   * Safari and iOS will not begin playback at all unless the server answers a
+   * Range request with 206, and every browser needs it to seek — without it
+   * the whole file is pulled down before the first frame. Images are happy
+   * either way, so this only engages for media that streams.
+   */
+  const range = STREAMABLE.has(ext) ? request.headers.get("range") : null;
+  const shared = {
+    // Keys are content-addressed (timestamp + random), so a given URL
+    // never changes — safe to cache hard.
+    "Cache-Control": "public, max-age=31536000, immutable",
+    // Defence in depth for uploaded SVGs. They are screened on upload, but
+    // an SVG opened directly is a document: this stops any script inside
+    // one executing, and stops a mislabelled file being sniffed as HTML.
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+    "X-Content-Type-Options": "nosniff",
+  };
+
+  if (range) {
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range.trim());
+    if (match) {
+      const [, rawStart, rawEnd] = match;
+      let start: number;
+      let end: number;
+
+      if (rawStart === "" && rawEnd !== "") {
+        // "bytes=-500" asks for the final 500 bytes, not the first 500.
+        start = Math.max(0, size - Number(rawEnd));
+        end = size - 1;
+      } else {
+        start = Number(rawStart || 0);
+        end = rawEnd === "" ? size - 1 : Math.min(Number(rawEnd), size - 1);
+      }
+
+      if (Number.isNaN(start) || Number.isNaN(end) || start > end || start >= size) {
+        return new NextResponse(null, {
+          status: 416,
+          headers: { "Content-Range": `bytes */${size}`, "Accept-Ranges": "bytes" },
+        });
+      }
+
+      const partial = Readable.toWeb(createReadStream(full, { start, end })) as ReadableStream;
+      return new NextResponse(partial, {
+        status: 206,
+        headers: {
+          ...shared,
+          "Content-Type": contentType,
+          "Content-Range": `bytes ${start}-${end}/${size}`,
+          "Content-Length": String(end - start + 1),
+          "Accept-Ranges": "bytes",
+        },
+      });
+    }
+  }
+
   const stream = Readable.toWeb(createReadStream(full)) as ReadableStream;
 
   return new NextResponse(stream, {
     headers: {
-      "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream",
+      ...shared,
+      "Content-Type": contentType,
       "Content-Length": String(size),
-      // Keys are content-addressed (timestamp + random), so a given URL
-      // never changes — safe to cache hard.
-      "Cache-Control": "public, max-age=31536000, immutable",
-      // Defence in depth for uploaded SVGs. They are screened on upload, but
-      // an SVG opened directly is a document: this stops any script inside
-      // one executing, and stops a mislabelled file being sniffed as HTML.
-      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
-      "X-Content-Type-Options": "nosniff",
+      // Advertised so a player knows it may seek rather than refusing to.
+      "Accept-Ranges": "bytes",
     },
   });
 }

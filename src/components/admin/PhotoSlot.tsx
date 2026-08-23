@@ -48,7 +48,7 @@ export function PhotoSlot({
           const input = e.currentTarget.elements.namedItem("photo") as HTMLInputElement | null;
           const file = input?.files?.[0];
           const reason = file
-            ? rejectionReason(file, favicon)
+            ? rejectionReason(file, favicon ? "favicon" : "photo")
             : `Choose ${favicon ? "an icon" : "a photo"} first.`;
           if (reason) {
             e.preventDefault();
@@ -88,7 +88,7 @@ export function PhotoSlot({
             // anyway, and a file past the proxy's body limit killed the request
             // mid-form — the owner got a server error page instead of the
             // warning that was sitting right there.
-            const reason = rejectionReason(file, favicon);
+            const reason = rejectionReason(file, favicon ? "favicon" : "photo");
             if (reason) {
               setError(reason);
               e.target.value = "";
