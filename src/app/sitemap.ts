@@ -1,5 +1,4 @@
 import type { MetadataRoute } from "next";
-import { connection } from "next/server";
 import { db } from "@/lib/db";
 import { SITE } from "@/lib/config";
 
@@ -14,14 +13,14 @@ import { SITE } from "@/lib/config";
  * shipped whose sitemap advertised six static pages and not one menu item.
  * Every deploy silently re-broke it.
  *
- * connection() stops prerendering, so the query runs against a live database
- * on a real request. Crawlers fetch this a handful of times a day and it is
- * one indexed SELECT over a hundred-odd rows, so there is nothing to save by
- * caching it.
+ * Declared dynamic rather than inferred: a request-time API only marks a
+ * route dynamic if the build actually executes it, which is not something to
+ * rely on. Crawlers fetch this a handful of times a day and it is one indexed
+ * SELECT over a hundred-odd rows, so there is nothing to save by caching it.
  */
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  await connection();
+export const dynamic = "force-dynamic";
 
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let items: { slug: string; updatedAt: Date }[] = [];
   try {
     items = await db.menuItem.findMany({

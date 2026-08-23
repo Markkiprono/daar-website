@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import { cache } from "react";
 import { db } from "./db";
 
@@ -26,26 +25,7 @@ function survive<T>(label: string, fallback: T) {
   };
 }
 
-/**
- * Every reader below opens with connection().
- *
- * The Docker image is built with no database, so any page prerendered at
- * build time ran these against nothing. survive() turned that failure into an
- * empty list and Next cached the empty render as a perfectly good page — so
- * for the first minute after every deploy the menu said "The menu is being
- * updated" and the sitemap listed no items.
- *
- * connection() stops prerendering, so these only ever run at request time
- * against a live database. It lives here rather than in each page because the
- * trapdoor belongs to the query, not to any one page: the next page that
- * reads settings inherits the fix instead of the bug.
- *
- * The wider point is that survive() lets a failed query render as a
- * successful empty page, and a cache cannot tell the difference. Keeping the
- * queries out of the prerender is what stops that being cacheable.
- */
 export const getMenu = cache(async () => {
-  await connection();
 
   return db.category
     .findMany({
@@ -73,7 +53,6 @@ export const getMenu = cache(async () => {
 });
 
 export const getFeatured = cache(async () => {
-  await connection();
 
   return db.menuItem
     .findFirst({
@@ -87,7 +66,6 @@ export const getFeatured = cache(async () => {
 });
 
 export const getSettings = cache(async () => {
-  await connection();
 
   return db.siteSettings
     .findUnique({ where: { id: "singleton" } })
@@ -95,7 +73,6 @@ export const getSettings = cache(async () => {
 });
 
 export const getHours = cache(async () => {
-  await connection();
 
   return db.openingHours
     .findMany({ orderBy: { dayOfWeek: "asc" } })
@@ -103,7 +80,6 @@ export const getHours = cache(async () => {
 });
 
 export const getStoryPhotos = cache(async () => {
-  await connection();
 
   return db.storyPhoto
     .findMany({ orderBy: { displayOrder: "asc" } })

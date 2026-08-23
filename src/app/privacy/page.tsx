@@ -5,7 +5,20 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { getSettings } from "@/lib/menu";
 import { SITE } from "@/lib/config";
 
-export const revalidate = 3600;
+/**
+ * Rendered per request, never at build time.
+ *
+ * The image is built with no database. Anything prerendered then ran its
+ * queries against nothing, survive() turned the failure into empty data, and
+ * Next cached that empty render as a good page — the menu read "being
+ * updated" for a minute after every deploy.
+ *
+ * Declared rather than inferred. Reaching for a request-time API inside the
+ * query layer only marks a route dynamic if the build happens to execute it,
+ * and a build with no database skips exactly the pages that need it most.
+ * This says so outright, so it cannot depend on what the build could reach.
+ */
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Privacy",
