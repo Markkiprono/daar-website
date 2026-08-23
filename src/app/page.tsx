@@ -34,19 +34,37 @@ export default async function HomePage() {
     getGallery(),
   ]);
 
-  // Real plates first, the room behind them. Padded with brand photography so
-  // the bands stay full on a menu that has few pictures yet.
+  /**
+   * The band: a few plates among the room, not a catalogue of the menu.
+   *
+   * getGallery draws five at random in the database, so it is a different
+   * handful every visit rather than the same photographs forever. That works
+   * because this page renders per request — see the note on force-dynamic
+   * above.
+   *
+   * Interleaved rather than concatenated: plates first then rooms would read
+   * as two separate strips joined end to end.
+   */
   const ROOM: Frame[] = [
     { src: "/brand/interior-02.jpg", alt: "The room at Daar" },
     { src: "/brand/terrace-drink.jpg", alt: "A drink on the terrace" },
     { src: "/brand/packaging-marble.jpg", alt: "Daar packaging" },
     { src: "/brand/counter.jpg", alt: "The counter" },
     { src: "/brand/interior-01.jpg", alt: "Brushed steel against plaster" },
+    { src: "/brand/patience-plates.jpg", alt: "Plates reading ‘Patience tastes better’" },
   ];
-  const plates: Frame[] = gallery
-    .filter((g) => g.imageUrl)
-    .map((g) => ({ src: g.imageUrl as string, alt: g.imageAlt ?? g.name, blur: g.blurDataUrl }));
-  const strip = [...plates, ...ROOM];
+
+  const plates: Frame[] = gallery.map((g) => ({
+    src: g.imageUrl,
+    alt: g.imageAlt ?? g.name,
+    blur: g.blurDataUrl,
+  }));
+
+  const strip: Frame[] = [];
+  for (let i = 0; i < Math.max(plates.length, ROOM.length); i += 1) {
+    if (plates[i]) strip.push(plates[i]);
+    if (ROOM[i]) strip.push(ROOM[i]);
+  }
   const galleryTop = strip.filter((_, i) => i % 2 === 0);
   const galleryBottom = strip.filter((_, i) => i % 2 === 1);
 

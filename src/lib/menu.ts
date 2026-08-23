@@ -52,22 +52,41 @@ export const getMenu = cache(async () => {
     .catch(survive("getMenu", [] as never[]));
 });
 
+/** Shape of the gallery rows, since a raw query has no generated type. */
+export type GalleryPlate = {
+  id: string;
+  name: string;
+  imageUrl: string;
+  imageAlt: string | null;
+  blurDataUrl: string | null;
+};
+
 /**
- * A handful of real plates for the home-page gallery.
+ * A few plates for the home-page band, chosen at random.
  *
- * Only items that actually have a photograph — a strip of grey placeholders
- * is worse than a shorter strip. Availability is ignored on purpose: this is
- * a look at what the kitchen makes, not a list of what is left today.
+ * The picking happens in Postgres rather than in the page. Shuffling in
+ * JavaScript would mean fetching thirty rows to keep five, and calling
+ * Math.random() while rendering — impure during render, and rightly flagged.
+ * ORDER BY RANDOM() does the job where the rows already are.
+ *
+ * Raw because Prisma has no random ordering. Postgres-only, which this
+ * project already is — see prisma/migrations/migration_lock.toml.
+ *
+ * Only items that have a photograph: a strip of grey placeholders is worse
+ * than a shorter strip. Availability is ignored on purpose — this is a look
+ * at what the kitchen makes, not a list of what is left today.
  */
 export const getGallery = cache(async () => {
-  return db.menuItem
-    .findMany({
-      where: { imageUrl: { not: null }, category: { isVisible: true } },
-      orderBy: [{ isFeatured: "desc" }, { updatedAt: "desc" }],
-      take: 10,
-      select: { id: true, name: true, imageUrl: true, imageAlt: true, blurDataUrl: true },
-    })
-    .catch(survive("getGallery", [] as never[]));
+  return db
+    .$queryRaw<GalleryPlate[]>`
+      SELECT i."id", i."name", i."imageUrl", i."imageAlt", i."blurDataUrl"
+      FROM "MenuItem" i
+      JOIN "Category" c ON c."id" = i."categoryId"
+      WHERE i."imageUrl" IS NOT NULL AND c."isVisible"
+      ORDER BY RANDOM()
+      LIMIT 5
+    `
+    .catch(survive("getGallery", [] as GalleryPlate[]));
 });
 
 export const getFeatured = cache(async () => {
