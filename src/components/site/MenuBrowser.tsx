@@ -172,6 +172,9 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
       }
       if (e.key === "Escape" && typingElsewhere) {
         setQuery("");
+        // Drop the category latch too — see the note on clearAll. Leaving it
+        // set here is what stops the chips jumping ever again.
+        setActiveCat(null);
         inputRef.current?.blur();
       }
     };
@@ -200,6 +203,17 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
     return () => io.disconnect();
   }, [categories, filtering]);
 
+  /**
+   * Both at once, and every path that clears the search must use it.
+   *
+   * A chip does one of two things depending on the mode: while searching it
+   * filters, while browsing it jumps down the page. activeCat is what decides,
+   * and it could only ever be set from the searching branch — so clearing the
+   * query while leaving activeCat set stranded the strip in filter mode with
+   * nothing on screen to say so. From then on every chip highlighted and
+   * nothing scrolled, and the only way out was tapping the same chip a second
+   * time to unlatch it, which nobody would guess.
+   */
   const clearAll = () => {
     setQuery("");
     setActiveCat(null);
@@ -231,7 +245,12 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
               id="menu-search"
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                // Emptying the field means the visitor has stopped searching,
+                // so the chips go back to being a way to jump down the page.
+                if (e.target.value === "") setActiveCat(null);
+              }}
               placeholder="Search the menu"
               autoComplete="off"
               className="h-12 w-full rounded-full border border-daar-rule bg-white pl-11 pr-11 text-[16px] text-daar-ink outline-none transition placeholder:text-daar-muted focus:border-daar-tan focus:ring-2 focus:ring-daar-tan/30"
@@ -241,7 +260,7 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
               <button
                 type="button"
                 onClick={() => {
-                  setQuery("");
+                  clearAll();
                   inputRef.current?.focus();
                 }}
                 aria-label="Clear search"
