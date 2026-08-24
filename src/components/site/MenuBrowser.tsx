@@ -280,6 +280,13 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
             aria-label="Menu categories"
             onScroll={readEdges}
             onPointerDown={(e) => {
+              // Unconditionally, before any early return. This flag suppresses
+              // the click at the end of a drag, and a drag that ends anywhere
+              // without producing a click — over a gap, past the edge, on the
+              // scrollbar — never reaches the handler that clears it. It then
+              // ate the next genuine tap instead, which is the tap someone
+              // makes immediately after dragging the strip to find a category.
+              drag.current.moved = false;
               if (e.pointerType !== "mouse") return;
               const el = stripRef.current;
               if (!el || el.scrollWidth <= el.clientWidth) return;
@@ -312,6 +319,14 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
               try {
                 stripRef.current?.releasePointerCapture(e.pointerId);
               } catch {}
+              // The click, if there is one, fires before this runs — so it
+              // still gets suppressed — and the flag is clear afterwards
+              // whether a click happened or not. Belt and braces with the
+              // reset above: that one covers a pointer, this one covers a
+              // keyboard press arriving next with no pointerdown at all.
+              window.setTimeout(() => {
+                drag.current.moved = false;
+              }, 0);
             }}
             onPointerCancel={() => {
               drag.current.active = false;
