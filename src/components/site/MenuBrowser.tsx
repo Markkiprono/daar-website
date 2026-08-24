@@ -43,7 +43,7 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
    * to show, so a strip that fits looks untouched.
    */
   const stripRef = useRef<HTMLElement>(null);
-  const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false });
+  const drag = useRef({ active: false, startX: 0, startScroll: 0, moved: false, captured: false });
   const [dragging, setDragging] = useState(false);
   const [edges, setEdges] = useState({ left: false, right: false });
 
@@ -295,13 +295,16 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
                 startX: e.clientX,
                 startScroll: el.scrollLeft,
                 moved: false,
+                captured: false,
               };
               setDragging(true);
-              // Throws if the pointer is already gone; losing capture just
-              // means the drag ends at the element edge, which is survivable.
-              try {
-                el.setPointerCapture(e.pointerId);
-              } catch {}
+              // Capture is NOT taken here. While a pointer is captured the
+              // browser retargets its events to the capturing element, so the
+              // click at the end lands on this <nav> instead of on the chip
+              // and the chip's own handler never runs — every plain click on a
+              // category was dead. It is taken in onPointerMove instead, once
+              // the pointer has actually travelled far enough to be a drag, by
+              // which point there is no click to protect.
             }}
             onPointerMove={(e) => {
               if (!drag.current.active) return;
@@ -309,16 +312,31 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
               if (!el) return;
               const dx = e.clientX - drag.current.startX;
               // A few pixels of slop, so a slightly shaky click is still a click.
-              if (Math.abs(dx) > 4) drag.current.moved = true;
+              if (Math.abs(dx) > 4) {
+                drag.current.moved = true;
+                // Now it is a drag, so take the pointer: this is what keeps it
+                // tracking when the cursor leaves the strip. Once only.
+                if (!drag.current.captured) {
+                  try {
+                    el.setPointerCapture(e.pointerId);
+                    drag.current.captured = true;
+                  } catch {
+                    /* losing capture just ends the drag at the edge */
+                  }
+                }
+              }
               el.scrollLeft = drag.current.startScroll - dx;
             }}
             onPointerUp={(e) => {
               if (!drag.current.active) return;
               drag.current.active = false;
               setDragging(false);
-              try {
-                stripRef.current?.releasePointerCapture(e.pointerId);
-              } catch {}
+              if (drag.current.captured) {
+                drag.current.captured = false;
+                try {
+                  stripRef.current?.releasePointerCapture(e.pointerId);
+                } catch {}
+              }
               // The click, if there is one, fires before this runs — so it
               // still gets suppressed — and the flag is clear afterwards
               // whether a click happened or not. Belt and braces with the
@@ -330,6 +348,7 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
             }}
             onPointerCancel={() => {
               drag.current.active = false;
+              drag.current.captured = false;
               setDragging(false);
             }}
             onClickCapture={(e) => {
