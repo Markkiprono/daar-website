@@ -427,7 +427,14 @@ export function MenuBrowser({ categories }: { categories: BrowserCategory[] }) {
                 )}
               </header>
 
-              <div className="mt-8 grid gap-x-5 gap-y-12 sm:grid-cols-2 lg:grid-cols-3">
+              <div
+                // Two columns from 30rem rather than Tailwind's sm (40rem).
+                // A tablet is rarely full-screen: an iPad in Split View is
+                // about 507px, and Safari at 150% zoom about 512px — both
+                // land under 40rem and dropped the menu to a single column on
+                // a screen with obvious room for two.
+                className="mt-8 grid gap-x-5 gap-y-12 min-[30rem]:grid-cols-2 lg:grid-cols-3"
+              >
                 {category.items.map((item, ii) => (
                   <Reveal key={item.id}>
                     <MenuItemCard item={item} priority={ci === 0 && ii < 3} />
