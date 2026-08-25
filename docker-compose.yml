@@ -85,6 +85,10 @@ services:
     volumes:
       # Uploaded photos must outlive the container.
       - uploads:/data/uploads
+      # So must the optimized copies of them. Without this the image cache is
+      # thrown away on every redeploy, and the first visitor after each deploy
+      # pays to re-encode the whole menu on two cores.
+      - next-cache:/app/.next/cache
     command: node server.js
 
   caddy:
@@ -103,5 +107,6 @@ services:
 volumes:
   db-data:
   uploads:
+  next-cache:
   caddy-data:
   caddy-config:

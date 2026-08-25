@@ -55,6 +55,20 @@ const nextConfig: NextConfig = {
      * from quietly shipping a 4K image over Kenyan mobile data.
      */
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+
+    /**
+     * 31 days. Next 16 defaults to 4 hours, which on a two-core VPS means the
+     * same handful of photographs are re-encoded several times a day, paid for
+     * by whichever visitor arrives first after each expiry.
+     *
+     * Safe here specifically because uploads are never overwritten: every file
+     * gets a timestamp-and-random suffix in src/lib/storage/index.ts, so
+     * replacing a photo produces a new URL and therefore a new cache entry.
+     * A long TTL can only ever serve a stale copy of a file that no longer has
+     * anything pointing at it. Do not raise this if uploads ever become
+     * stable-named — a re-uploaded photo would then take a month to appear.
+     */
+    minimumCacheTTL: 2678400,
   },
 
   experimental: {

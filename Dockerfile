@@ -74,6 +74,14 @@ COPY --from=build --chown=nextjs:nodejs /app/.next/static ./.next/static
 RUN mkdir -p /data/uploads && chown -R nextjs:nodejs /data
 VOLUME ["/data"]
 
+# Where Next writes optimized images and the ISR cache. Created here, owned by
+# the runtime user, ON PURPOSE: docker-compose mounts a named volume over this
+# path so the cache survives a redeploy, and Docker seeds an empty volume with
+# the ownership of the directory already in the image. Without this line the
+# volume arrives root-owned, the `nextjs` user cannot write to it, and every
+# image request silently falls through to re-optimizing on the fly.
+RUN mkdir -p /app/.next/cache && chown -R nextjs:nodejs /app/.next/cache
+
 USER nextjs
 EXPOSE 3000
 
