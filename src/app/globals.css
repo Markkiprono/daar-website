@@ -411,6 +411,26 @@ body {
     break-inside: avoid;
   }
 
+  /* Except the photo menu, where one course is a dozen plates and taller than
+     any page. Only the plate itself has to stay whole — the rule above would
+     otherwise ask for something impossible and leave half-empty pages.
+     Scoped to .daar-plates rather than written against bare `figure`, so a
+     <figure> added to the public site later doesn't silently inherit rules
+     written for a menu book. */
+  .daar-plates {
+    break-inside: auto;
+  }
+  .daar-plates figure {
+    break-inside: avoid;
+  }
+
+  /* On the photo menu the photographs ARE the content, so they must survive
+     the browser's habit of dropping images and backgrounds to save ink. */
+  .daar-plates img {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
   h1,
   h2 {
     break-after: avoid;
