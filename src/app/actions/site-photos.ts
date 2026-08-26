@@ -15,6 +15,11 @@ const SLOTS = {
   story: "storyImageUrl",
   visit: "visitImageUrl",
   chef: "chefImageUrl",
+  panelOne: "panelOneImageUrl",
+  panelTwo: "panelTwoImageUrl",
+  panelThree: "panelThreeImageUrl",
+  closing: "closingImageUrl",
+  storyBand: "storyBandImageUrl",
 } as const;
 type Slot = keyof typeof SLOTS;
 
@@ -38,6 +43,33 @@ async function process(file: File) {
   const storage = await getStorage();
   const stored = await storage.put(buildKey("site.webp", "site"), processed.buffer, processed.contentType);
   return { url: stored.url, blur: processed.blurDataUrl };
+}
+
+/**
+ * Stores a film byte-for-byte, the way the hero loop always has.
+ *
+ * No re-encoding: there is no ffmpeg in the runtime image, and transcoding
+ * video inside a request is not a thing to start doing. The burden is on the
+ * file being sensible before it arrives, which is what the size limit and the
+ * wording on the form are for.
+ */
+async function processVideo(file: File) {
+  if (!VIDEO_TYPES.includes(file.type)) {
+    throw new Error(
+      `That file is ${file.type || "an unknown type"}. Please use an MP4 or WebM — a .mov from a phone needs converting first.`,
+    );
+  }
+  if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
+    throw new Error(
+      `That video is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${MAX_VIDEO_MB} MB. A background loop should be a few seconds and heavily compressed.`,
+    );
+  }
+
+  const extension = file.type === "video/webm" ? "webm" : "mp4";
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const storage = await getStorage();
+  const stored = await storage.put(buildKey(`site.${extension}`, "site"), bytes, file.type);
+  return { url: stored.url };
 }
 
 /** Best-effort cleanup of a replaced/removed local file. */
@@ -73,14 +105,18 @@ export async function updateSitePhoto(_prev: PhotoState, formData: FormData): Pr
     });
     await cleanup(currentUrl);
     revalidatePublic();
-    return { ok: true, message: "Photo removed — the default is back." };
+    return { ok: true, message: "Removed — the default is back." };
   }
 
   const file = formData.get("photo") as File | null;
-  if (!file || file.size === 0) return { ok: false, error: "Choose a photo first." };
+  if (!file || file.size === 0) return { ok: false, error: "Choose a photo or video first." };
+
+  // One column, either kind of file. Which one it holds is read back off the
+  // extension the server chose here — see src/lib/media.ts.
+  const video = VIDEO_TYPES.includes(file.type);
 
   try {
-    const { url } = await process(file);
+    const { url } = video ? await processVideo(file) : await process(file);
     await db.siteSettings.upsert({
       where: { id: "singleton" },
       update: { [column]: url },
@@ -92,7 +128,7 @@ export async function updateSitePhoto(_prev: PhotoState, formData: FormData): Pr
   }
 
   revalidatePublic();
-  return { ok: true, message: "Photo updated." };
+  return { ok: true, message: video ? "Video updated." : "Photo updated." };
 }
 
 // ------------------------------------------------------------
@@ -225,6 +261,71 @@ export async function moveStoryPhoto(formData: FormData) {
   [reordered[index], reordered[swap]] = [reordered[swap]!, reordered[index]!];
   await db.$transaction(
     reordered.map((p, i) => db.storyPhoto.update({ where: { id: p.id }, data: { displayOrder: i } })),
+  );
+  revalidatePublic();
+}
+
+// ------------------------------------------------------------
+//  Home gallery — the drifting band of plates
+// ------------------------------------------------------------
+
+/**
+ * Photographs only, unlike the backdrop slots above.
+ *
+ * The band holds a dozen or more tiles and every one of them is on screen at
+ * once. A dozen films autoplaying side by side is minutes of somebody's
+ * mobile data and a phone that gets warm, for a strip that is decoration. If
+ * the café wants moving pictures on the home page, the panels take them.
+ */
+export async function addHomePhoto(_prev: PhotoState, formData: FormData): Promise<PhotoState> {
+  await assertAdmin();
+
+  const file = formData.get("photo") as File | null;
+  if (!file || file.size === 0) return { ok: false, error: "Choose a photo first." };
+
+  try {
+    const { url, blur } = await process(file);
+    const count = await db.homePhoto.count();
+    await db.homePhoto.create({
+      data: {
+        imageUrl: url,
+        blurDataUrl: blur,
+        imageAlt: (formData.get("alt") as string | null)?.trim() || "A photo of Daar",
+        displayOrder: count,
+      },
+    });
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Upload failed." };
+  }
+
+  revalidatePublic();
+  return { ok: true, message: "Added to the band." };
+}
+
+export async function deleteHomePhoto(formData: FormData) {
+  await assertAdmin();
+  const id = String(formData.get("id"));
+  const photo = await db.homePhoto.findUnique({ where: { id }, select: { imageUrl: true } });
+  await db.homePhoto.delete({ where: { id } });
+  await cleanup(photo?.imageUrl);
+  revalidatePublic();
+}
+
+export async function moveHomePhoto(formData: FormData) {
+  await assertAdmin();
+  const id = String(formData.get("id"));
+  const direction = String(formData.get("direction")) as "up" | "down";
+
+  const all = await db.homePhoto.findMany({ orderBy: { displayOrder: "asc" } });
+  const index = all.findIndex((p) => p.id === id);
+  if (index === -1) return;
+  const swap = direction === "up" ? index - 1 : index + 1;
+  if (swap < 0 || swap >= all.length) return;
+
+  const reordered = [...all];
+  [reordered[index], reordered[swap]] = [reordered[swap]!, reordered[index]!];
+  await db.$transaction(
+    reordered.map((p, i) => db.homePhoto.update({ where: { id: p.id }, data: { displayOrder: i } })),
   );
   revalidatePublic();
 }

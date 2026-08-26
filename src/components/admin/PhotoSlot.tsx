@@ -3,12 +3,19 @@
 import { useActionState, useState } from "react";
 import { updateSitePhoto, updateFavicon, type PhotoState } from "@/app/actions/site-photos";
 import { Button } from "@/components/ui/button";
-import { rejectionReason } from "@/lib/image-rules";
+import { rejectionReason, isVideoFile, MAX_VIDEO_MB } from "@/lib/image-rules";
+import { isVideoUrl } from "@/lib/media";
 
 /**
  * A single replaceable site photo (hero, story, visit) or the favicon.
  * Preview the current image, choose a new one, or remove it to restore the
  * built-in default.
+ *
+ * With `allowVideo` the same box also takes a short film, because the owner
+ * thinks of it as "the picture in that section" and should not have to know
+ * which sections were built to hold moving pictures. Whichever kind is
+ * uploaded lands in the same column; the site reads back which one it got
+ * from the file extension.
  */
 export function PhotoSlot({
   slot,
@@ -17,6 +24,7 @@ export function PhotoSlot({
   current,
   aspect = "aspect-[16/9]",
   favicon = false,
+  allowVideo = false,
 }: {
   slot: string;
   title: string;
@@ -24,21 +32,36 @@ export function PhotoSlot({
   current: string | null;
   aspect?: string;
   favicon?: boolean;
+  allowVideo?: boolean;
 }) {
   const action = favicon ? updateFavicon : updateSitePhoto;
   const [state, formAction, pending] = useActionState<PhotoState, FormData>(action, undefined);
   const [preview, setPreview] = useState<string | null>(current);
   const [error, setError] = useState<string | null>(null);
   const [remove, setRemove] = useState(false);
+  /* Tracked rather than derived from the preview URL: a freshly chosen file
+     previews as a blob: URL, which carries no extension to read. */
+  const [previewIsVideo, setPreviewIsVideo] = useState(isVideoUrl(current));
+
+  const kind = favicon ? "favicon" : allowVideo ? "media" : "photo";
+  const noun = allowVideo ? "photo or video" : "photo";
 
   const accept = favicon
     ? "image/png,image/svg+xml,image/x-icon,.ico"
-    : "image/jpeg,image/png,image/webp,image/avif";
+    : allowVideo
+      ? "image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm"
+      : "image/jpeg,image/png,image/webp,image/avif";
 
   return (
     <div className="rounded-lg border border-neutral-200 bg-white p-4">
       <h3 className="text-sm font-medium">{title}</h3>
       <p className="mt-1 text-xs text-neutral-500">{description}</p>
+      {allowVideo && (
+        <p className="mt-1 text-xs text-neutral-400">
+          A photo, or an MP4/WebM of a few seconds (up to {MAX_VIDEO_MB} MB). Film plays silently
+          and repeats, and the built-in photo shows underneath while it loads.
+        </p>
+      )}
 
       <form
         action={formAction}
@@ -48,8 +71,8 @@ export function PhotoSlot({
           const input = e.currentTarget.elements.namedItem("photo") as HTMLInputElement | null;
           const file = input?.files?.[0];
           const reason = file
-            ? rejectionReason(file, favicon ? "favicon" : "photo")
-            : `Choose ${favicon ? "an icon" : "a photo"} first.`;
+            ? rejectionReason(file, kind)
+            : `Choose ${favicon ? "an icon" : `a ${noun}`} first.`;
           if (reason) {
             e.preventDefault();
             setError(reason);
@@ -62,12 +85,28 @@ export function PhotoSlot({
 
         {preview && !remove ? (
           <div className={`relative w-full overflow-hidden rounded-md bg-neutral-100 ${favicon ? "aspect-square max-w-[96px]" : aspect}`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={preview} alt="" className="h-full w-full object-cover" />
+            {previewIsVideo ? (
+              // Muted and looping so the preview behaves like the page does,
+              // and controls so the owner can actually check what they picked.
+              <video
+                src={preview}
+                muted
+                loop
+                autoPlay
+                playsInline
+                controls
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={preview} alt="" className="h-full w-full object-cover" />
+            )}
           </div>
         ) : (
           <div className={`grid w-full place-items-center rounded-md border border-dashed border-neutral-300 bg-neutral-50 ${favicon ? "aspect-square max-w-[96px]" : aspect}`}>
-            <span className="text-xs text-neutral-400">{remove ? "Will use default" : "No custom photo"}</span>
+            <span className="text-xs text-neutral-400">
+              {remove ? "Will use default" : `No custom ${favicon ? "icon" : noun}`}
+            </span>
           </div>
         )}
 
@@ -81,6 +120,7 @@ export function PhotoSlot({
             setError(null);
             if (!file) {
               setPreview(current);
+              setPreviewIsVideo(isVideoUrl(current));
               return;
             }
             // Early feedback before the upload is attempted. The file MUST be
@@ -88,13 +128,15 @@ export function PhotoSlot({
             // anyway, and a file past the proxy's body limit killed the request
             // mid-form — the owner got a server error page instead of the
             // warning that was sitting right there.
-            const reason = rejectionReason(file, favicon ? "favicon" : "photo");
+            const reason = rejectionReason(file, kind);
             if (reason) {
               setError(reason);
               e.target.value = "";
               setPreview(current);
+              setPreviewIsVideo(isVideoUrl(current));
               return;
             }
+            setPreviewIsVideo(isVideoFile(file));
             setPreview(URL.createObjectURL(file));
           }}
           className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-neutral-100 file:px-3 file:py-2 file:text-sm disabled:opacity-50"

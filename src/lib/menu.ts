@@ -89,6 +89,19 @@ export const getGallery = cache(async () => {
     .catch(survive("getGallery", [] as GalleryPlate[]));
 });
 
+/**
+ * The photographs the café chose for the home-page band, in their order.
+ *
+ * Empty is the normal state and not a failure: with no rows the page falls
+ * back to getGallery's random plates, which is what the band did before it
+ * could be edited. Curating it is opt-in.
+ */
+export const getHomePhotos = cache(async () => {
+  return db.homePhoto
+    .findMany({ orderBy: { displayOrder: "asc" } })
+    .catch(survive("getHomePhotos", [] as never[]));
+});
+
 export const getFeatured = cache(async () => {
 
   return db.menuItem

@@ -20,8 +20,14 @@ function motionAllowed() {
 }
 
 /**
- * The hero backdrop: a still photograph, with a silent loop over it when one
- * has been uploaded.
+ * A full-bleed backdrop: a still photograph, with a silent loop over it when
+ * one has been uploaded.
+ *
+ * Used by the hero, the sliding panels and the closing band. It was written
+ * for the hero alone and generalised when the dashboard gained a slot for
+ * every one of those sections — the careful part below is the same wherever
+ * a film sits behind type, and having three copies of it would mean three
+ * places to get autoplay, Reduce Motion and Save-Data subtly wrong.
  *
  * The photograph is always rendered and is always the element the browser
  * measures for largest-contentful-paint. The video is layered on top at zero
@@ -38,14 +44,25 @@ function motionAllowed() {
  * That last one matters beyond preference: a looping background is exactly
  * the kind of movement people turn that setting on to escape.
  */
-export function HeroMedia({
+export function MediaBackdrop({
   image,
   video,
   alt,
+  priority = true,
+  imageClassName = "object-cover",
+  overlayClassName = "bg-[linear-gradient(180deg,rgba(18,16,15,.15),rgba(18,16,15,.55)_55%,rgba(18,16,15,.92))]",
+  sizes = "100vw",
 }: {
   image: string;
   video: string | null;
   alt: string;
+  /** Only the first thing on screen should preload — see next/image docs. */
+  priority?: boolean;
+  imageClassName?: string;
+  /** The scrim that keeps display type legible over any photograph. Pass "" where nothing sits on top. */
+  overlayClassName?: string;
+  /** Full-bleed by default; narrow it where the slot is not the whole width. */
+  sizes?: string;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -102,13 +119,16 @@ export function HeroMedia({
 
   return (
     <div ref={box} className="absolute inset-0">
+      {/* `preload`, not the deprecated `priority` — see the Next 16 notes in
+          node_modules/next/dist/docs. Only what is actually on screen first
+          should claim it; several competing preloads help nobody. */}
       <Image
         src={image}
         alt={alt}
         fill
-        priority
-        sizes="100vw"
-        className="object-cover"
+        preload={priority}
+        sizes={sizes}
+        className={imageClassName}
       />
 
       {video && wanted && near && (
@@ -136,7 +156,7 @@ export function HeroMedia({
         />
       )}
 
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,16,15,.15),rgba(18,16,15,.55)_55%,rgba(18,16,15,.92))]" />
+      <div className={`absolute inset-0 ${overlayClassName}`} />
     </div>
   );
 }

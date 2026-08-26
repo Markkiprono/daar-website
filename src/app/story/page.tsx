@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { MediaBackdrop } from "@/components/site/MediaBackdrop";
+import { splitMedia } from "@/lib/media";
 import { Reveal } from "@/components/site/Reveal";
 import { MessageForm } from "@/components/site/MessageForm";
 import { getSettings, getStoryPhotos } from "@/lib/menu";
@@ -49,6 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function StoryPage() {
   const [settings, galleryPhotos] = await Promise.all([getSettings(), getStoryPhotos()]);
+  const story = splitMedia(settings?.storyImageUrl, "/brand/interior-01.jpg");
 
   // All prose comes from the dashboard. Paragraphs split on blank lines, so
   // the owner controls the whole page without touching code.
@@ -78,15 +81,13 @@ export default async function StoryPage() {
           opening itself. */}
       <section className="relative grid min-h-[78svh] place-items-center overflow-hidden bg-daar-ink px-5 text-center text-daar-cream">
         <div className="absolute inset-0">
-          <Image
-            src={settings?.storyImageUrl ?? "/brand/interior-01.jpg"}
+          <MediaBackdrop
+            image={story.image}
+            video={story.video}
             alt="Inside Daar — brushed steel against the plaster wall"
-            fill
-            priority
-            sizes="100vw"
-            className="daar-drift object-cover"
+            imageClassName="daar-drift object-cover"
+            overlayClassName="bg-[linear-gradient(180deg,rgba(18,16,15,.35),rgba(18,16,15,.5)_55%,rgba(18,16,15,.9))]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,16,15,.35),rgba(18,16,15,.5)_55%,rgba(18,16,15,.9))]" />
         </div>
         <div className="daar-tex-hero pointer-events-none absolute inset-0" />
 

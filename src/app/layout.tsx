@@ -3,6 +3,7 @@ import { Bodoni_Moda, Jost, Montserrat } from "next/font/google";
 import { SITE } from "@/lib/config";
 import { ServiceWorker } from "@/components/site/ServiceWorker";
 import { getSettings } from "@/lib/menu";
+import { isVideoUrl } from "@/lib/media";
 import "./globals.css";
 
 /**
@@ -53,8 +54,10 @@ const HOME_DESCRIPTION =
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings().catch(() => null);
+  // A hero slot holding a film falls back to the brand still: this URL is
+  // og:image, and a link that unfurls to an .mp4 shows as a broken box.
   const heroImage = new URL(
-    settings?.heroImageUrl ?? "/brand/counter.jpg",
+    isVideoUrl(settings?.heroImageUrl) ? "/brand/counter.jpg" : (settings?.heroImageUrl ?? "/brand/counter.jpg"),
     SITE.url,
   ).toString();
 

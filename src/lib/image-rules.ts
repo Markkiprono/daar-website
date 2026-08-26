@@ -30,8 +30,15 @@ export const FAVICON_TYPES = [
   "image/vnd.microsoft.icon",
 ];
 
-/** What a given slot will accept. */
-export type UploadKind = "photo" | "favicon" | "video";
+/**
+ * What a given slot will accept.
+ *
+ * "media" is a slot that takes either — the site's backdrops, where the owner
+ * may want a still one week and a few seconds of film the next. It is its own
+ * kind rather than a `photo | video` union at every call site, because the
+ * size limit depends on which one actually arrived.
+ */
+export type UploadKind = "photo" | "favicon" | "video" | "media";
 
 const RULES: Record<UploadKind, { types: string[]; maxMB: number; noun: string; wanted: string }> = {
   photo: {
@@ -52,7 +59,19 @@ const RULES: Record<UploadKind, { types: string[]; maxMB: number; noun: string; 
     noun: "video",
     wanted: "an MP4 or WebM",
   },
+  media: {
+    types: [...PHOTO_TYPES, ...VIDEO_TYPES],
+    // Never consulted: a media slot picks its limit from what arrived, below.
+    maxMB: MAX_VIDEO_MB,
+    noun: "photo or video",
+    wanted: "a JPG, PNG, WebP, MP4 or WebM",
+  },
 };
+
+/** Whether this file is one of the video types, i.e. which limit applies. */
+export function isVideoFile(file: File): boolean {
+  return VIDEO_TYPES.includes(file.type);
+}
 
 /**
  * The reason this file can't be used, or null when it's fine.
@@ -70,8 +89,14 @@ export function rejectionReason(file: File, kind: UploadKind = "photo"): string 
     return `This file isn’t ${rule.noun === "icon" ? "an icon" : `a ${rule.noun}`} we can use${got}. Please choose ${rule.wanted}.`;
   }
 
-  if (file.size > rule.maxMB * 1024 * 1024) {
-    return `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${rule.maxMB} MB limit. Please choose a smaller ${rule.noun}.`;
+  // A slot taking either has two limits, and the file itself says which one
+  // applies — 12 MB is right for a photograph and absurd for a film.
+  const video = isVideoFile(file);
+  const maxMB = kind === "media" ? (video ? MAX_VIDEO_MB : MAX_PHOTO_MB) : rule.maxMB;
+  const noun = kind === "media" ? (video ? "video" : "photo") : rule.noun;
+
+  if (file.size > maxMB * 1024 * 1024) {
+    return `This file is ${(file.size / 1024 / 1024).toFixed(1)} MB and exceeds the ${maxMB} MB limit. Please choose a smaller ${noun}.`;
   }
 
   return null;

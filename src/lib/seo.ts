@@ -1,4 +1,5 @@
 import { SITE } from "./config";
+import { isVideoUrl } from "./media";
 
 /**
  * Structured data (JSON-LD) builders.
@@ -73,10 +74,16 @@ export function bakeryJsonLd(settings: Settings, hours: Hours) {
       : [];
 
   // Every photo we can honestly point at. Google prefers several.
+  // A slot holding a film falls back to the brand still: this list is
+  // `image` on a Restaurant, and an .mp4 there is not a photograph of the
+  // premises, it is a broken result.
+  const stillOr = (uploaded: string | null | undefined, fallback: string) =>
+    isVideoUrl(uploaded) ? fallback : (uploaded ?? fallback);
+
   const images = [
-    settings?.heroImageUrl ?? "/brand/counter.jpg",
-    settings?.visitImageUrl ?? "/brand/interior-01.jpg",
-    settings?.storyImageUrl ?? "/brand/patience-plates.jpg",
+    stillOr(settings?.heroImageUrl, "/brand/counter.jpg"),
+    stillOr(settings?.visitImageUrl, "/brand/interior-01.jpg"),
+    stillOr(settings?.storyImageUrl, "/brand/patience-plates.jpg"),
   ]
     .map(absolute)
     .filter((v): v is string => Boolean(v));
@@ -144,7 +151,10 @@ export function bakeryJsonLd(settings: Settings, hours: Hours) {
  * link shared on WhatsApp always shows a picture instead of a bare title.
  */
 export function socialImage(uploaded: string | null | undefined, fallback: string, alt: string) {
-  const url = absolute(uploaded ?? fallback)!;
+  /* A slot may now hold a film instead of a photograph, and an .mp4 in
+     og:image is a link that unfurls as a broken box on WhatsApp and in search
+     results. The brand still is the right thing to send in that case. */
+  const url = absolute(isVideoUrl(uploaded) ? fallback : (uploaded ?? fallback))!;
   return {
     openGraph: { images: [{ url, alt }] },
     twitter: { images: [url] },

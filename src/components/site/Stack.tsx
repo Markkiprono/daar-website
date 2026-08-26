@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MediaBackdrop } from "./MediaBackdrop";
 
 export type Panel = {
   /** The line that sits on this panel. */
@@ -7,6 +8,8 @@ export type Panel = {
   /** Small label above it. */
   eyebrow?: string;
   image: string;
+  /** A silent loop over the still, when the dashboard holds one for this panel. */
+  video?: string | null;
   alt: string;
   links?: { label: string; href: string }[];
 };
@@ -27,6 +30,10 @@ export type Panel = {
  * With scripting off it behaves identically: this is CSS, and every line and
  * photograph is in the markup.
  */
+/** One scrim, whether the panel is holding a photograph or a film. */
+const SCRIM =
+  "bg-[linear-gradient(180deg,rgba(18,16,15,.5),rgba(18,16,15,.3)_45%,rgba(18,16,15,.8))]";
+
 export function Stack({ panels }: { panels: Panel[] }) {
   return (
     <div className="relative">
@@ -38,16 +45,32 @@ export function Stack({ panels }: { panels: Panel[] }) {
             i > 0 ? "rounded-t-[1.75rem] shadow-[0_-24px_60px_rgba(18,16,15,.55)]" : "",
           ].join(" ")}
         >
-          <Image
-            src={panel.image}
-            alt={panel.alt}
-            fill
-            sizes="100vw"
-            priority={i === 0}
-            className="daar-drift object-cover"
-          />
-          {/* Enough scrim that display type holds over any photograph. */}
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(18,16,15,.5),rgba(18,16,15,.3)_45%,rgba(18,16,15,.8))]" />
+          {/* A panel with no film stays exactly as it was: a plain server-
+              rendered <Image>, no client component, no JavaScript. Only a
+              panel the café actually put a film behind pays for one. */}
+          {panel.video ? (
+            <MediaBackdrop
+              image={panel.image}
+              video={panel.video}
+              alt={panel.alt}
+              priority={i === 0}
+              imageClassName="daar-drift object-cover"
+              overlayClassName={SCRIM}
+            />
+          ) : (
+            <>
+              <Image
+                src={panel.image}
+                alt={panel.alt}
+                fill
+                sizes="100vw"
+                preload={i === 0}
+                className="daar-drift object-cover"
+              />
+              {/* Enough scrim that display type holds over any photograph. */}
+              <div className={`absolute inset-0 ${SCRIM}`} />
+            </>
+          )}
 
           <div className="relative z-10 mx-auto max-w-[1000px] py-24">
             {panel.eyebrow && (

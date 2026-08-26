@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { MediaBackdrop } from "@/components/site/MediaBackdrop";
+import { splitMedia } from "@/lib/media";
 import { Reveal } from "@/components/site/Reveal";
 import { getSettings, getHours } from "@/lib/menu";
 import { DAY_NAMES, SITE } from "@/lib/config";
@@ -56,6 +58,7 @@ function readSocials(value: unknown): { label: string; url: string }[] {
 
 export default async function VisitPage() {
   const [settings, hours] = await Promise.all([getSettings(), getHours()]);
+  const visit = splitMedia(settings?.visitImageUrl, "/brand/interior-02.jpg");
 
   const address = settings?.addressLine ?? SITE.city;
   const socials = readSocials(settings?.socials);
@@ -206,12 +209,13 @@ export default async function VisitPage() {
                 section below — and silently dropped the photograph. */}
             <Reveal>
               <div className="daar-arch relative aspect-[4/5] bg-daar-slate">
-                <Image
-                  src={settings?.visitImageUrl ?? "/brand/interior-02.jpg"}
+                <MediaBackdrop
+                  image={visit.image}
+                  video={visit.video}
                   alt={`The dining room at ${SITE.name}, ${SITE.area}`}
-                  fill
+                  priority={false}
+                  overlayClassName=""
                   sizes="(min-width: 1024px) 560px, 92vw"
-                  className="object-cover"
                 />
               </div>
             </Reveal>

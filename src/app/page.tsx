@@ -3,11 +3,12 @@ import Link from "next/link";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Reveal } from "@/components/site/Reveal";
-import { HeroMedia } from "@/components/site/HeroMedia";
+import { MediaBackdrop } from "@/components/site/MediaBackdrop";
 import { Stack } from "@/components/site/Stack";
 import { Marquee, type Frame } from "@/components/site/Marquee";
-import { getFeatured, getSettings, getHours, getGallery } from "@/lib/menu";
+import { getFeatured, getSettings, getHours, getGallery, getHomePhotos } from "@/lib/menu";
 import { formatPrice, DAY_NAMES, SITE } from "@/lib/config";
+import { splitMedia } from "@/lib/media";
 import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 
 /** Menu and content change from the dashboard, so don't cache indefinitely. */
@@ -27,11 +28,12 @@ import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, settings, hours, gallery] = await Promise.all([
+  const [featured, settings, hours, gallery, chosen] = await Promise.all([
     getFeatured(),
     getSettings(),
     getHours(),
     getGallery(),
+    getHomePhotos(),
   ]);
 
   /**
@@ -60,16 +62,68 @@ export default async function HomePage() {
     blur: g.blurDataUrl,
   }));
 
-  const strip: Frame[] = [];
+  const mixed: Frame[] = [];
   for (let i = 0; i < Math.max(plates.length, ROOM.length); i += 1) {
-    if (plates[i]) strip.push(plates[i]);
-    if (ROOM[i]) strip.push(ROOM[i]);
+    if (plates[i]) mixed.push(plates[i]);
+    if (ROOM[i]) mixed.push(ROOM[i]);
   }
+
+  /* Chosen photographs win outright — a band that is half the café's picks
+     and half a random draw is neither. One row in the dashboard is enough to
+     take the whole strip over; none leaves the self-filling version above. */
+  const strip: Frame[] =
+    chosen.length > 0
+      ? chosen.map((p) => ({
+          src: p.imageUrl,
+          alt: p.imageAlt ?? "A photo of Daar",
+          blur: p.blurDataUrl,
+        }))
+      : mixed;
+
   const galleryTop = strip.filter((_, i) => i % 2 === 0);
   const galleryBottom = strip.filter((_, i) => i % 2 === 1);
 
-  const heroImage = settings?.heroImageUrl ?? "/brand/counter.jpg";
-  const storyImage = settings?.storyImageUrl ?? "/brand/patience-plates.jpg";
+  /**
+   * Every backdrop the dashboard can set, resolved once.
+   *
+   * The fallbacks are the exact expressions these sections used before they
+   * had slots of their own — panel two really did show the hero photograph,
+   * and the closing band really did show the Visit one. Keeping those as the
+   * defaults means nothing on the live site moves the day this ships: the
+   * coupling only ends for a section once the café puts its own picture in.
+   *
+   * splitMedia decides which of the pair a slot is holding. A slot with a
+   * film in it hands back the built-in default as the still underneath, so a
+   * video upload can never leave a section blank.
+   */
+  const brandHero = "/brand/counter.jpg";
+  const brandStory = "/brand/patience-plates.jpg";
+
+  const hero = splitMedia(settings?.heroImageUrl, brandHero);
+  const storyBand = splitMedia(
+    settings?.storyBandImageUrl ?? settings?.storyImageUrl,
+    brandStory,
+  );
+  const panelOne = splitMedia(
+    settings?.panelOneImageUrl ?? settings?.storyImageUrl,
+    "/brand/interior-01.jpg",
+  );
+  const panelTwo = splitMedia(settings?.panelTwoImageUrl ?? settings?.heroImageUrl, brandHero);
+  const panelThree = splitMedia(
+    settings?.panelThreeImageUrl ?? settings?.visitImageUrl,
+    brandStory,
+  );
+  const closing = splitMedia(
+    settings?.closingImageUrl ?? settings?.visitImageUrl,
+    "/brand/terrace-drink.jpg",
+  );
+
+  /* The closing band predates its own slot: it existed only to carry the
+     "Film" upload, and disappeared without one. It now also appears for a
+     café that puts a still or a film in the closing slot itself. */
+  const closingVideo = closing.video ?? settings?.heroVideoUrl ?? null;
+  const chef = splitMedia(settings?.chefImageUrl, "/brand/chef-vikash.webp");
+  const showClosing = Boolean(closingVideo || settings?.closingImageUrl);
 
   // Collapse consecutive days that share hours: "Mon – Thu   7:00 — 21:00".
   const grouped: { label: string; value: string }[] = [];
@@ -96,9 +150,9 @@ export default async function HomePage() {
 
       {/* ---------- HERO ---------- */}
       <section className="relative grid min-h-[100svh] place-items-center overflow-hidden bg-daar-ink text-center">
-        <HeroMedia
-          image={heroImage}
-          video={null}
+        <MediaBackdrop
+          image={hero.image}
+          video={hero.video}
           alt="Inside Daar — takeaway boxes on a paint-marbled table"
         />
         <div className="daar-tex-hero pointer-events-none absolute inset-0" />
@@ -158,17 +212,20 @@ export default async function HomePage() {
           {
             eyebrow: "Daar means home",
             line: "Daar means home.",
-            image: settings?.storyImageUrl ?? "/brand/interior-01.jpg",
+            image: panelOne.image,
+            video: panelOne.video,
             alt: "Inside Daar — brushed steel against the plaster wall",
           },
           {
             line: "One room. One idea.",
-            image: heroImage,
+            image: panelTwo.image,
+            video: panelTwo.video,
             alt: "The counter at Daar",
           },
           {
             line: "The things worth eating can’t be hurried.",
-            image: settings?.visitImageUrl ?? "/brand/patience-plates.jpg",
+            image: panelThree.image,
+            video: panelThree.video,
             alt: "Daar plates reading ‘Patience tastes better’",
             links: [
               { label: "See the menu", href: "/menu" },
@@ -256,12 +313,13 @@ export default async function HomePage() {
         <section className="bg-daar-bone px-5 py-28 text-daar-ink">
           <div className="mx-auto grid max-w-[1240px] items-center gap-12 lg:grid-cols-[.85fr_1.15fr] lg:gap-20">
             <Reveal rise className="daar-arch relative aspect-[3/4] bg-daar-slate">
-              <Image
-                src={settings.chefImageUrl ?? "/brand/chef-vikash.webp"}
+              <MediaBackdrop
+                image={chef.image}
+                video={chef.video}
                 alt={`${settings.chefName}, ${settings.chefRole ?? "chef"} at ${SITE.name}`}
-                fill
+                priority={false}
+                overlayClassName=""
                 sizes="(min-width: 1024px) 440px, 92vw"
-                className="object-cover"
               />
             </Reveal>
 
@@ -343,12 +401,15 @@ export default async function HomePage() {
       >
         <div className="mx-auto grid max-w-[1240px] items-center gap-12 lg:grid-cols-[.9fr_1.1fr] lg:gap-20">
           <Reveal className="daar-arch relative aspect-[3/4] bg-daar-slate">
-            <Image
-              src={storyImage}
+            {/* No scrim: nothing sits over this one, and darkening it would
+                only mute a photograph the arch already frames. */}
+            <MediaBackdrop
+              image={storyBand.image}
+              video={storyBand.video}
               alt="Daar plates reading ‘Patience tastes better’"
-              fill
+              priority={false}
+              overlayClassName=""
               sizes="(min-width: 1024px) 480px, 92vw"
-              className="object-cover"
             />
           </Reveal>
           <Reveal>
@@ -377,12 +438,13 @@ export default async function HomePage() {
           Sits at the foot of the page on purpose. A loop behind the headline
           competes with the headline; down here it is the last thing seen
           before the address, which is the note to leave people on. */}
-      {settings?.heroVideoUrl && (
+      {showClosing && (
         <section className="relative grid min-h-[80svh] place-items-center overflow-hidden bg-daar-ink px-5 text-center text-daar-cream">
-          <HeroMedia
-            image={settings.visitImageUrl ?? "/brand/terrace-drink.jpg"}
-            video={settings.heroVideoUrl}
+          <MediaBackdrop
+            image={closing.image}
+            video={closingVideo}
             alt="Inside Daar"
+            priority={false}
           />
           <div className="relative z-10 mx-auto max-w-[820px] py-24">
             <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">

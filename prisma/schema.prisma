@@ -286,6 +286,24 @@ model SiteSettings {
   /// Photo on the Visit and Reserve pages.
   visitImageUrl String?
 
+  /// --- The home page's own backdrops ---
+  /// Each of these used to borrow another page's photo: the three sliding
+  /// panels took the story, hero and visit images, and so did the closing
+  /// band. Changing the Visit page therefore changed the home page, which
+  /// nobody could have guessed from the dashboard. They now stand alone, and
+  /// fall back to the same brand artwork as before when unset.
+  ///
+  /// Any of these may hold a video rather than a photograph — see
+  /// src/lib/media.ts. The built-in default is the still frame underneath.
+  panelOneImageUrl   String?
+  panelTwoImageUrl   String?
+  panelThreeImageUrl String?
+  /// The "Come and see" band at the foot of the home page.
+  closingImageUrl String?
+  /// The arch beside "Daar means home" on the home page — distinct from
+  /// storyImageUrl, which is the Story page's own photograph.
+  storyBandImageUrl String?
+
   /// --- The chef, on the home page ---
   /// Words published under a named person, so they belong in the dashboard
   /// where that person can approve and change them — not in the page source.
@@ -343,6 +361,24 @@ model OpeningHours {
 
 /// The photo grid on the Story page. Editable from the dashboard.
 model StoryPhoto {
+  id           String   @id @default(cuid())
+  imageUrl     String
+  imageAlt     String?
+  blurDataUrl  String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([displayOrder])
+}
+
+/// The drifting band of plates on the home page ("What today looks like").
+///
+/// Empty by design at first: with no rows the band falls back to picking
+/// menu photographs at random, which is what it did before it could be
+/// edited. Add a single row and the band shows exactly what was chosen —
+/// so curating it is opt-in, and a café that never opens this section keeps
+/// a band that fills itself.
+model HomePhoto {
   id           String   @id @default(cuid())
   imageUrl     String
   imageAlt     String?

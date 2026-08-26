@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { MediaBackdrop } from "@/components/site/MediaBackdrop";
+import { splitMedia } from "@/lib/media";
 import { Reveal } from "@/components/site/Reveal";
 import { ReservationForm } from "@/components/site/ReservationForm";
 import { getSettings, getHours } from "@/lib/menu";
@@ -36,6 +37,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ReservePage() {
   const [settings, hours] = await Promise.all([getSettings(), getHours()]);
+  const visit = splitMedia(settings?.visitImageUrl, "/brand/interior-01.jpg");
   const closedDays = hours.filter((h) => h.isClosed).map((h) => h.dayOfWeek);
   const enabled = settings?.reservationsEnabled ?? true;
 
@@ -95,12 +97,13 @@ export default async function ReservePage() {
 
           <Reveal>
             <div className="daar-arch relative aspect-[3/4] bg-daar-slate">
-              <Image
-                src={settings?.visitImageUrl ?? "/brand/interior-01.jpg"}
+              <MediaBackdrop
+                image={visit.image}
+                video={visit.video}
                 alt="The dining room at Daar"
-                fill
+                priority={false}
+                overlayClassName=""
                 sizes="(min-width: 1024px) 480px, 92vw"
-                className="object-cover"
               />
             </div>
 

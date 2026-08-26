@@ -3,7 +3,15 @@ import { requireAdmin } from "@/lib/dal";
 import { Card, CardContent } from "@/components/ui/card";
 import { PhotoSlot } from "@/components/admin/PhotoSlot";
 import { HeroVideoSlot } from "@/components/admin/HeroVideoSlot";
-import { StoryGallery } from "@/components/admin/StoryGallery";
+import { PhotoGallery } from "@/components/admin/PhotoGallery";
+import {
+  addStoryPhoto,
+  deleteStoryPhoto,
+  moveStoryPhoto,
+  addHomePhoto,
+  deleteHomePhoto,
+  moveHomePhoto,
+} from "@/app/actions/site-photos";
 
 export const dynamic = "force-dynamic";
 
@@ -22,9 +30,10 @@ export default async function PhotosPage() {
   // Must precede every query — see the note in menu/page.tsx.
   await requireAdmin();
 
-  const [settings, gallery] = await Promise.all([
+  const [settings, gallery, band] = await Promise.all([
     db.siteSettings.findUnique({ where: { id: "singleton" } }),
     db.storyPhoto.findMany({ orderBy: { displayOrder: "asc" } }),
+    db.homePhoto.findMany({ orderBy: { displayOrder: "asc" } }),
   ]);
 
   return (
@@ -35,26 +44,109 @@ export default async function PhotosPage() {
           Replace the images across the public site. Leave any empty to keep the built-in brand
           photo. Uploads are resized and optimised automatically.
         </p>
+        <p className="mt-2 text-sm text-neutral-500">
+          Most of these take a short video as well as a photo. A film plays silently, repeats, and
+          never starts for anyone who has asked their phone to reduce motion or save data — they
+          keep the photo instead.
+        </p>
       </div>
 
-      <Section title="Home page">
+      <Section title="Home page — the opening">
         <div className="space-y-6">
           <PhotoSlot
             slot="hero"
             title="Hero background"
-            description="The full-screen photo behind the headline on the home page. Landscape works best. Kept as the still frame under any video below."
+            description="The full-screen photo behind the headline on the home page. Landscape works best."
             current={settings?.heroImageUrl ?? null}
             aspect="aspect-[16/9]"
+            allowVideo
           />
-          <HeroVideoSlot current={settings?.heroVideoUrl ?? null} />
           <PhotoSlot
             slot="chef"
             title="The chef"
             description="Portrait beside the welcome on the home page. Upright works best. The words themselves live under Settings."
             current={settings?.chefImageUrl ?? null}
             aspect="aspect-[3/4]"
+            allowVideo
+          />
+          <PhotoSlot
+            slot="storyBand"
+            title="“Daar means home” photo"
+            description="The arch-shaped photo beside the story on the home page. Until you set one here it borrows the Story page photo below."
+            current={settings?.storyBandImageUrl ?? null}
+            aspect="aspect-[3/4]"
+            allowVideo
           />
         </div>
+      </Section>
+
+      {/* The three sliding panels. Called by the words on them rather than by
+          position, because "panel two" means nothing to the person looking at
+          the page and the sentence is unmistakable. */}
+      <Section title="Home page — the three sliding panels">
+        <p className="-mt-2 mb-5 text-sm text-neutral-500">
+          The full-screen panels that slide up over one another as you scroll. Each one used to
+          borrow another page’s photo, which is why changing the Visit photo moved the home page
+          too. Set one here and that panel stops borrowing.
+        </p>
+        <div className="space-y-6">
+          <PhotoSlot
+            slot="panelOne"
+            title="“Daar means home.”"
+            description="First panel. Borrows the Story page photo until you set one."
+            current={settings?.panelOneImageUrl ?? null}
+            aspect="aspect-[16/9]"
+            allowVideo
+          />
+          <PhotoSlot
+            slot="panelTwo"
+            title="“One room. One idea.”"
+            description="Second panel. Borrows the hero photo until you set one."
+            current={settings?.panelTwoImageUrl ?? null}
+            aspect="aspect-[16/9]"
+            allowVideo
+          />
+          <PhotoSlot
+            slot="panelThree"
+            title="“The things worth eating can’t be hurried.”"
+            description="Third panel, the one carrying the menu and visit links. Borrows the Visit photo until you set one."
+            current={settings?.panelThreeImageUrl ?? null}
+            aspect="aspect-[16/9]"
+            allowVideo
+          />
+        </div>
+      </Section>
+
+      <Section title="Home page — the closing band">
+        <div className="space-y-6">
+          <PhotoSlot
+            slot="closing"
+            title="“Patience tastes better” background"
+            description="The last full-screen section before the address. Borrows the Visit photo until you set one. Setting anything here makes the section appear even without a film below."
+            current={settings?.closingImageUrl ?? null}
+            aspect="aspect-[16/9]"
+            allowVideo
+          />
+          <HeroVideoSlot current={settings?.heroVideoUrl ?? null} />
+        </div>
+      </Section>
+
+      <Section title="Home page — “What today looks like”">
+        <p className="-mt-2 mb-4 text-sm text-neutral-500">
+          The band of pictures that drifts across the home page. Left empty it fills itself with
+          menu photographs, picked afresh on every visit. Add one photo here and it shows exactly
+          what you choose instead, in this order.
+        </p>
+        <PhotoGallery
+          photos={band.map((p) => ({ id: p.id, imageUrl: p.imageUrl, imageAlt: p.imageAlt }))}
+          addAction={addHomePhoto}
+          deleteAction={deleteHomePhoto}
+          moveAction={moveHomePhoto}
+          emptyMessage="No photos chosen — the band is picking menu photographs at random."
+          addTitle="Add a photo to the band"
+          submitLabel="Add to the band"
+          confirmMessage="Remove this photo from the band?"
+        />
       </Section>
 
       <Section title="Story page">
@@ -65,14 +157,20 @@ export default async function PhotosPage() {
             description="The large photo near the top of the Story page."
             current={settings?.storyImageUrl ?? null}
             aspect="aspect-[16/10]"
+            allowVideo
           />
           <div>
             <h3 className="mb-1 text-sm font-medium">Gallery</h3>
             <p className="mb-4 text-xs text-neutral-500">
               The grid of photos further down the Story page. Drag order with the arrows.
             </p>
-            <StoryGallery
+            <PhotoGallery
               photos={gallery.map((p) => ({ id: p.id, imageUrl: p.imageUrl, imageAlt: p.imageAlt }))}
+              addAction={addStoryPhoto}
+              deleteAction={deleteStoryPhoto}
+              moveAction={moveStoryPhoto}
+              emptyMessage="No gallery photos yet — the Story page uses default brand images until you add some."
+              confirmMessage="Remove this photo from the gallery?"
             />
           </div>
         </div>
@@ -85,6 +183,7 @@ export default async function PhotosPage() {
           description="Shown on both the Visit and Reserve pages. Portrait orientation."
           current={settings?.visitImageUrl ?? null}
           aspect="aspect-[3/4]"
+          allowVideo
         />
       </Section>
 
