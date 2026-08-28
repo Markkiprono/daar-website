@@ -68,6 +68,26 @@ export function fromMinutes(total: number): string {
 /** No booking is taken this close to closing time. */
 export const LAST_SEATING_MINUTES = 30;
 
+/** Minutes in a day — how much a closing time past midnight is worth. */
+const MINUTES_PER_DAY = 1440;
+
+/**
+ * The latest slot that can be offered on any date, 23:30.
+ *
+ * A booking is stored against one calendar date, so a slot has to fall inside
+ * that date. Without this cap a café closing at 01:00 would compute a last
+ * seating of 24:30 and fromMinutes would hand back the string "24:30" — not a
+ * time, and rejected by the very validation that generated it.
+ *
+ * Tables after midnight are therefore not offered online. That is a deliberate
+ * limit rather than an oversight: making them work means a slot whose date is
+ * the following day, which every other part of the booking flow — the date
+ * comparison in isSlotBookable, the closed-day check, the list the café reads
+ * in the morning — would have to be taught about. Someone wanting a table at
+ * half past midnight can telephone.
+ */
+const LAST_SLOT_MINUTES = 23 * 60 + 30;
+
 /** A day's opening hours as stored on OpeningHours. */
 export type DayHours = {
   dayOfWeek: number;
@@ -89,16 +109,35 @@ export function weekdayOf(date: string): number {
  * entirely, so it took bookings before opening — which the server then
  * rejected — while refusing late ones on the nights the café is open latest.
  *
- * Times that do not span a day are treated as "no slots" rather than guessed
- * at: hours are stored as same-day "HH:MM", so a closing time before the
- * opening one is bad data, not a night that runs past midnight.
+ * A closing time EARLIER than the opening one means the night runs past
+ * midnight, and is read that way.
+ *
+ * This used to be treated as bad data and answered with no slots at all. It
+ * is not bad data: the dashboard offers a plain time field, midnight is
+ * "00:00" in it, and a café open till midnight on Friday and Saturday enters
+ * exactly that. The result was that the two busiest nights of the week
+ * silently accepted no bookings — the guest was told "we're done taking
+ * bookings for today" on a Saturday morning — while the five quiet days
+ * worked perfectly, which is why it went unnoticed. Both halves of the
+ * booking flow call this function, so both refused; nothing was logged,
+ * because as far as the code was concerned it had been asked for the slots of
+ * a day that has none.
  */
 export function slotsForHours(openTime: string | null, closeTime: string | null): string[] {
   if (!openTime || !closeTime) return [];
 
   const open = toMinutes(openTime);
-  const lastSeating = toMinutes(closeTime) - LAST_SEATING_MINUTES;
-  if (Number.isNaN(open) || Number.isNaN(lastSeating) || lastSeating < open) return [];
+  let close = toMinutes(closeTime);
+  if (Number.isNaN(open) || Number.isNaN(close)) return [];
+
+  // Strictly earlier, not "earlier or equal": an opening and closing time that
+  // are identical says nothing usable — it could be a full day or a slip of
+  // the finger — and guessing a 24-hour café out of it would start taking
+  // bookings the owner never agreed to. That stays "no slots".
+  if (close < open) close += MINUTES_PER_DAY;
+
+  const lastSeating = Math.min(close - LAST_SEATING_MINUTES, LAST_SLOT_MINUTES);
+  if (lastSeating < open) return [];
 
   const out: string[] = [];
   // Start on the first :00 or :30 at or after opening.

@@ -122,12 +122,84 @@ export async function createReservation(
     };
   }
 
-  // Cheap duplicate guard: same phone, same day, same time.
-  const existing = await db.reservation.findFirst({
-    where: { phone: d.phone, date, time: d.time, status: { not: ReservationStatus.CANCELLED } },
+  /**
+   * Duplicate guard: same person, same day, same time.
+   *
+   * Two things were wrong with the version this replaces, and together they
+   * cost covers.
+   *
+   * It matched `phone` as an exact string, so "+254 727 117 355" and
+   * "0727117355" were different people — the double-submit it exists to catch
+   * slipped through whenever the guest retyped their number differently.
+   * Compared on digits alone now.
+   *
+   * Worse, it returned the success screen without writing anything. A guest
+   * who booked for two, realised they were eight and sent the form again saw
+   * "Request received" and a reference, while the café's dashboard still said
+   * two and no second email ever arrived. A resubmission that CHANGES
+   * something is an amendment, not a duplicate, so it updates the request and
+   * tells the owner. Only a byte-identical resubmission — the actual
+   * double-click — is answered with a silent no-op.
+   */
+  const digitsOnly = (value: string) => value.replace(/\D/g, "");
+  const sameSlot = await db.reservation.findMany({
+    where: { date, time: d.time, status: { not: ReservationStatus.CANCELLED } },
   });
+  const existing = sameSlot.find((r) => digitsOnly(r.phone) === digitsOnly(d.phone));
+
   if (existing) {
-    return { ok: true, reference: reference(existing.id) };
+    const unchanged =
+      existing.name === d.name &&
+      existing.partySize === d.partySize &&
+      existing.email === d.email &&
+      (existing.occasion ?? "") === (d.occasion || "") &&
+      (existing.notes ?? "") === (d.notes || "");
+
+    if (unchanged) return { ok: true, reference: reference(existing.id) };
+
+    // A booking the café has already confirmed is theirs to change, not ours:
+    // they may have moved tables together for it. Send the guest to the phone
+    // rather than quietly editing a plan somebody has acted on.
+    if (existing.status === ReservationStatus.CONFIRMED) {
+      return {
+        ok: false,
+        error:
+          "We've already confirmed a table on this number at that time. Please call us and we'll change it for you.",
+      };
+    }
+
+    const amended = await db.reservation.update({
+      where: { id: existing.id },
+      data: {
+        name: d.name,
+        phone: d.phone,
+        email: d.email,
+        partySize: d.partySize,
+        occasion: d.occasion || null,
+        notes: d.notes || null,
+      },
+    });
+
+    try {
+      await notifyOwner({
+        subject: `Booking request CHANGED — ${d.name}, now ${d.partySize} on ${d.date} at ${d.time}`,
+        replyTo: d.email,
+        lines: [
+          `${d.name} has changed an existing request.`,
+          `Now ${d.partySize} ${d.partySize === 1 ? "guest" : "guests"} (was ${existing.partySize}).`,
+          `${d.date} at ${d.time}`,
+          `Phone: ${d.phone}`,
+          `Email: ${d.email}`,
+          d.occasion ? `Occasion: ${d.occasion}` : "",
+          d.notes ? `Notes: ${d.notes}` : "",
+        ].filter(Boolean),
+      });
+    } catch {
+      /* The change is saved and visible in the dashboard; email is a courtesy. */
+    }
+
+    revalidatePath("/admin/reservations");
+    return { ok: true, reference: reference(amended.id) };
   }
 
   const created = await db.reservation.create({

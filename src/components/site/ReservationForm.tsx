@@ -45,17 +45,39 @@ export function ReservationForm({ maxPartySize, note, closedDays, hours, phone }
    * drops out. The server re-checks both — the page may have been open for
    * hours, and this list is only a convenience.
    */
+  /** Every slot that day has, before anything already gone is removed. */
+  const daySlots = useMemo(
+    () => (chosenDate ? slotsForDate(chosenDate, hours) : []),
+    [chosenDate, hours],
+  );
+
   const times = useMemo(() => {
     if (!chosenDate) return [];
     const now = cafeNow();
-    return slotsForDate(chosenDate, hours).filter((t) => isSlotBookable(chosenDate, t, now));
-  }, [chosenDate, hours]);
+    return daySlots.filter((t) => isSlotBookable(chosenDate, t, now));
+  }, [chosenDate, daySlots]);
 
   const isToday = chosenDate === cafeNow().date;
-  // An empty list means two different things, and saying the wrong one sends
-  // people away: shut all day, or today's remaining slots have passed.
+
+  /**
+   * An empty list of times means three different things, and saying the wrong
+   * one sends people away.
+   *
+   * This used to be a single flag that always spoke as though the guest had
+   * picked today — so someone choosing a date next Saturday was told "we're
+   * done taking bookings for today, please choose tomorrow or later", which
+   * is both untrue and impossible to act on. They are now told apart by
+   * whether the day HAS any slots at all, or merely has none left.
+   */
   const isClosedDay = chosenDate !== "" && closedDays.includes(weekdayOf(chosenDate));
-  const noSlotsLeft = chosenDate !== "" && !isClosedDay && times.length === 0;
+  /* The café is open, but no bookable time exists on that day — hours that are
+     unset or too short to seat anyone. Nothing the guest can do about it, so
+     point them at the telephone rather than at another date. */
+  const takesNoBookings = chosenDate !== "" && !isClosedDay && daySlots.length === 0;
+  /* The day had times and they have all passed. Only ever true of today. */
+  const todayIsOver =
+    chosenDate !== "" && !isClosedDay && daySlots.length > 0 && times.length === 0;
+  const noTimes = takesNoBookings || todayIsOver;
 
   if (state?.ok) {
     return (
@@ -159,7 +181,7 @@ export function ReservationForm({ maxPartySize, note, closedDays, hours, phone }
             name="time"
             required
             defaultValue=""
-            disabled={chosenDate === "" || noSlotsLeft || isClosedDay}
+            disabled={chosenDate === "" || noTimes || isClosedDay}
             className={`${field} disabled:cursor-not-allowed disabled:bg-daar-cream/40 disabled:text-daar-muted`}
           >
             <option value="" disabled>
@@ -167,9 +189,11 @@ export function ReservationForm({ maxPartySize, note, closedDays, hours, phone }
                 ? "Pick a date first"
                 : isClosedDay
                   ? "Closed that day"
-                  : noSlotsLeft
-                    ? "None left today"
-                    : "Choose…"}
+                  : takesNoBookings
+                    ? "No times that day"
+                    : todayIsOver
+                      ? "None left today"
+                      : "Choose…"}
             </option>
             {times.map((t) => (
               <option key={t} value={t}>
@@ -197,7 +221,22 @@ export function ReservationForm({ maxPartySize, note, closedDays, hours, phone }
         <p className="rounded-[3px] bg-daar-cream/60 px-4 py-3 text-sm text-daar-muted">
           We&apos;re closed that day — please choose another.
         </p>
-      ) : noSlotsLeft ? (
+      ) : takesNoBookings ? (
+        <p className="rounded-[3px] bg-daar-cream/60 px-4 py-3 text-sm text-daar-muted">
+          We can&apos;t take an online booking for that day
+          {phone ? (
+            <>
+              {" "}
+              — please call us on{" "}
+              <a href={`tel:${phone.replace(/\s/g, "")}`} className="underline">
+                {phone}
+              </a>{" "}
+              and we&apos;ll sort it out
+            </>
+          ) : null}
+          .
+        </p>
+      ) : todayIsOver ? (
         <p className="rounded-[3px] bg-daar-cream/60 px-4 py-3 text-sm text-daar-muted">
           We&apos;re done taking bookings for today — please choose tomorrow or later.
         </p>
