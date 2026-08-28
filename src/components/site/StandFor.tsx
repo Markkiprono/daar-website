@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { Reveal } from "./Reveal";
-import { SwipeStrip } from "./SwipeStrip";
 import {
   HEADING_SIZE_CLASS,
   CARD_SIZE_CLASS,
@@ -24,11 +23,11 @@ export type ValueCardView = {
  * Fixed rather than random so the page renders identically on the server and
  * in the browser — a random tilt is a hydration mismatch waiting to happen,
  * and re-rolling it on every visit is movement nobody asked for. Cycled by
- * index, so any number of cards gets the same loose-paper look. Small numbers
- * on purpose: enough that the row does not read as a grid, not so much that
- * the type looks like a mistake.
+ * index, so any number of cards gets the same loose-deck look. The
+ * alternating sign matters more than the size: it is what leaves the cards
+ * underneath showing a corner instead of hiding in perfect register.
  */
-const TILT = [-1.6, 1.2, -1, 1.5];
+const TILT = [-2.2, 1.7, -1.3, 2];
 
 /**
  * Stands in when a card has no photograph of its own.
@@ -45,37 +44,29 @@ const FALLBACK_IMAGES = [
 ];
 
 /**
- * "What we stand for" — the house rules, on cards you can swipe.
+ * "What we stand for" — a deck of cards that stacks up as the page scrolls.
  *
- * EVERY WORD, PICTURE AND SIZE HERE COMES FROM THE DASHBOARD. This section
- * shipped with its four cards written into the page source, which meant the
- * café could not correct a typo on their own home page without a developer
- * and a deploy. They are rows in ValueCard now, and the heading, the label
- * above it and both size settings are columns on SiteSettings. Nothing in
- * this file decides what it says — only how it is set.
+ * THE CARDS PILE UP, THEY DO NOT SLIDE SIDEWAYS. Each card is `sticky` with a
+ * `top` slightly lower than the one before it, so scrolling down carries a
+ * card up to park while the next slides over it, leaving the earlier ones
+ * showing as a stack of tilted edges underneath. That is the whole mechanism:
+ * the browser's own sticky positioning — no scroll listener, no transform
+ * maths, no library, and nothing to stutter on a cheap phone.
  *
- * THE SLIDING IS THE BROWSER'S, NOT OURS. This is a scroll-snap carousel —
- * `overflow-x-auto` with `snap-x snap-mandatory`, and every card a snap point.
- * A finger drag, a trackpad swipe, a shift-wheel and the arrow keys all work
- * because they are the platform's own gestures; there is no drag handler, no
- * touch-start maths and no carousel library. That matters more than it sounds
- * on a phone: hand-rolled swipe code is the thing that fights the browser for
- * the scroll and ends up feeling sticky on cheap Android hardware.
+ * An earlier version made this a horizontal swipe strip. That was a
+ * misreading of what was asked for, and it is named here so nobody "fixes" it
+ * back: scrolling sideways hides cards behind a gesture and needs arrows
+ * bolted on for anyone using a mouse, while stacking shows every card on the
+ * way past and asks nothing of the reader at all.
  *
- * The card width leaves the next one peeking in from the right. That peek is
- * the whole affordance — it is how someone knows to swipe without being told,
- * which is why there are no dots and no arrows to maintain.
+ * Every word, picture and size comes from the dashboard. This section shipped
+ * with its cards written into the page source, which meant the café could not
+ * correct a typo on their own home page without a developer and a deploy.
+ * They are rows in ValueCard now, and the heading, the label above it and
+ * both size settings are columns on SiteSettings. Nothing in this file
+ * decides what it says — only how it is set.
  *
- * IT SCROLLS AT EVERY WIDTH. An earlier version switched the carousel off
- * from `lg` up and let the cards sit in a row, on the reasoning that a wide
- * screen has room to show everything. That was wrong twice over: it caps the
- * section at however many cards happen to fit, so adding a fifth quietly
- * squashed the other four, and it threw away the one interaction people
- * liked. The strip now behaves the same everywhere, and SwipeStrip adds
- * arrows on pointer devices because a mouse is the only input that cannot
- * scroll sideways on its own.
- *
- * With scripting off it is identical: this is all CSS, and every line and
+ * With scripting off it behaves identically: this is CSS, and every line and
  * photograph is in the markup.
  */
 export function StandFor({
@@ -91,7 +82,7 @@ export function StandFor({
   cardSize: string | null;
   cards: ValueCardView[];
 }) {
-  // No cards means no section. A heading over an empty strip is worse than
+  // No cards means no section. A heading over an empty deck is worse than
   // nothing, and the café hiding every card is a legitimate way to take the
   // section down.
   if (cards.length === 0) return null;
@@ -116,73 +107,77 @@ export function StandFor({
         </Reveal>
 
         {/*
-          Focusable and labelled on purpose. A region that scrolls but cannot be
-          reached by keyboard is a WCAG failure — someone driving the page from
-          the keyboard has no other way to reach the last card. tabIndex={0}
-          makes the arrow keys work here the way they already do for a mouse.
-
-          `-mx-5 px-5` lets the strip run to both edges of the phone while the
-          first card still lines up with the heading above it: the padding is
-          inside the scroller, so it becomes leading space rather than a margin
-          the cards can never cross.
+          The padding gives the last card somewhere to rest before the section
+          ends. Without it the whole deck unsticks the moment the final card
+          arrives, and every card appears to drop off the screen at once.
         */}
-        <SwipeStrip
-          label={heading}
-          className="-mx-5 mt-12 gap-4 px-5 py-6 md:mt-16 lg:gap-6"
-        >
+        <div className="mt-12 pb-[12vh] md:mt-16">
           {cards.map((card, i) => {
             const lines = bodyLines(card.body);
             const image = card.imageUrl ?? FALLBACK_IMAGES[i % FALLBACK_IMAGES.length]!;
 
             return (
-              <article
+              <div
                 key={card.id}
-                // shrink-0 or flexbox squeezes every card into one screen and
-                // there is nothing left to scroll. On lg the row wraps instead,
-                // and basis-0/grow lets any number of cards share the width.
-                className={`relative shrink-0 snap-start overflow-hidden rounded-[1.5rem] bg-daar-ink shadow-[0_24px_50px_-18px_rgba(18,16,15,0.7)] ${size.card}`}
-                style={{ rotate: `${TILT[i % TILT.length]}deg` }}
+                // The sticky element is this wrapper rather than the card, so
+                // the card itself is free to carry the rotation: a transform
+                // on a sticky element is the sort of thing that works until a
+                // browser decides otherwise.
+                //
+                // The bottom margin is what creates the scroll distance
+                // between one card parking and the next arriving. Without it
+                // they would all stick at once and there would be no deck.
+                className={`sticky mx-auto mb-[22vh] w-full last:mb-0 ${size.card}`}
+                // Each card parks a little lower than the one before, and
+                // that offset is exactly the sliver of the earlier card left
+                // showing underneath.
+                style={{ top: `calc(5.5rem + ${i * 0.9}rem)` }}
               >
-                <div className="relative aspect-[3/4]">
-                  <Image
-                    src={image}
-                    // The café's own description when they wrote one. Falling
-                    // back to the heading is better than an empty alt: the card
-                    // is a titled thing, and "Craft" tells a screen reader more
-                    // than silence does.
-                    alt={card.imageAlt ?? card.title}
-                    fill
-                    sizes="(min-width: 1024px) 300px, 88vw"
-                    className="object-cover"
-                    {...(card.blurDataUrl
-                      ? { placeholder: "blur" as const, blurDataURL: card.blurDataUrl }
-                      : {})}
-                  />
-                  {/* Dark only where the words are, so the photograph keeps its
-                      top two-thirds. */}
-                  <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_30%,rgba(18,16,15,0.5)_58%,rgba(18,16,15,0.93))]" />
-                </div>
+                <article
+                  className="relative overflow-hidden rounded-[1.5rem] bg-daar-ink shadow-[0_30px_60px_-20px_rgba(18,16,15,0.75)]"
+                  style={{ rotate: `${TILT[i % TILT.length]}deg` }}
+                >
+                  <div className="relative aspect-[3/4]">
+                    <Image
+                      src={image}
+                      // The café's own description when they wrote one.
+                      // Falling back to the heading beats an empty alt: the
+                      // card is a titled thing, and "Craft" tells a screen
+                      // reader more than silence does.
+                      alt={card.imageAlt ?? card.title}
+                      fill
+                      sizes="(min-width: 640px) 470px, 92vw"
+                      className="object-cover"
+                      {...(card.blurDataUrl
+                        ? { placeholder: "blur" as const, blurDataURL: card.blurDataUrl }
+                        : {})}
+                    />
+                    {/* Dark only where the words are, so the photograph keeps
+                        its top two-thirds. */}
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent_30%,rgba(18,16,15,0.5)_58%,rgba(18,16,15,0.93))]" />
+                  </div>
 
-                <div className="absolute inset-x-0 bottom-0 p-6">
-                  <h3
-                    className={`font-[family-name:var(--font-display)] leading-tight text-daar-bone ${size.title}`}
-                  >
-                    {card.title}
-                  </h3>
-                  {lines.length > 0 && (
-                    <div
-                      className={`mt-3 space-y-1 font-light leading-snug text-daar-cream/90 ${size.body}`}
+                  <div className="absolute inset-x-0 bottom-0 p-6 sm:p-7">
+                    <h3
+                      className={`font-[family-name:var(--font-display)] leading-tight text-daar-bone ${size.title}`}
                     >
-                      {lines.map((line, n) => (
-                        <p key={n}>{line}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </article>
+                      {card.title}
+                    </h3>
+                    {lines.length > 0 && (
+                      <div
+                        className={`mt-3 space-y-1 font-light leading-snug text-daar-cream/90 ${size.body}`}
+                      >
+                        {lines.map((line, n) => (
+                          <p key={n}>{line}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </article>
+              </div>
             );
           })}
-        </SwipeStrip>
+        </div>
       </div>
     </section>
   );

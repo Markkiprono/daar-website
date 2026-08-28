@@ -35,9 +35,9 @@ export const HEADING_SIZE_OPTIONS: SizeOption<HeadingSize>[] = [
 ];
 
 export const CARD_SIZE_OPTIONS: SizeOption<CardSize>[] = [
-  { value: "sm", label: "Small", hint: "More cards visible at once; less room for words." },
+  { value: "sm", label: "Small", hint: "A tighter deck; less room for words." },
   { value: "md", label: "Medium", hint: "The default." },
-  { value: "lg", label: "Large", hint: "One card at a time on a phone, bigger photographs." },
+  { value: "lg", label: "Large", hint: "Fills more of the screen; bigger photographs." },
 ];
 
 export const DEFAULT_HEADING_SIZE: HeadingSize = "lg";
@@ -56,26 +56,27 @@ export const HEADING_SIZE_CLASS: Record<HeadingSize, string> = {
 };
 
 /**
- * Card width, and the type on it.
+ * How wide each card in the stack is, and the type on it.
  *
- * The vw width is what decides how much of the next card peeks in, which is
- * the only thing telling a visitor the strip can be swiped — so "Large" stops
- * at 88vw rather than 100vw. A card filling the screen edge to edge looks like
- * a section, not like a deck, and nobody swipes a section.
+ * A single centred column, not a row: the cards pile up over one another as
+ * the page scrolls, so width is a fixed measure rather than a share of the
+ * viewport. Capped well below the content width on purpose — a card that runs
+ * edge to edge reads as a section, and a section is not something anyone
+ * expects to see another one slide over.
  */
 export const CARD_SIZE_CLASS: Record<CardSize, { card: string; title: string; body: string }> = {
   sm: {
-    card: "w-[62vw] max-w-[260px]",
+    card: "max-w-[320px]",
     title: "text-[clamp(1.15rem,3.6vw,1.4rem)]",
     body: "text-[0.8rem]",
   },
   md: {
-    card: "w-[78vw] max-w-[330px]",
+    card: "max-w-[400px]",
     title: "text-[clamp(1.4rem,4.5vw,1.8rem)]",
     body: "text-[0.9rem]",
   },
   lg: {
-    card: "w-[88vw] max-w-[400px]",
+    card: "max-w-[470px]",
     title: "text-[clamp(1.6rem,5.4vw,2.1rem)]",
     body: "text-[1rem]",
   },
