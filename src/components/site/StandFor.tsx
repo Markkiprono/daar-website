@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Reveal } from "./Reveal";
+import { SwipeStrip } from "./SwipeStrip";
 import {
   HEADING_SIZE_CLASS,
   CARD_SIZE_CLASS,
@@ -65,11 +66,14 @@ const FALLBACK_IMAGES = [
  * the whole affordance — it is how someone knows to swipe without being told,
  * which is why there are no dots and no arrows to maintain.
  *
- * From `lg` up the carousel turns itself off (`lg:flex-wrap`,
- * `lg:overflow-visible`) and the cards simply sit in a row. Swiping is a phone
- * gesture; on a wide screen there is room to show everything at once, and a
- * carousel that hides content behind an interaction is worse than a row that
- * does not.
+ * IT SCROLLS AT EVERY WIDTH. An earlier version switched the carousel off
+ * from `lg` up and let the cards sit in a row, on the reasoning that a wide
+ * screen has room to show everything. That was wrong twice over: it caps the
+ * section at however many cards happen to fit, so adding a fifth quietly
+ * squashed the other four, and it threw away the one interaction people
+ * liked. The strip now behaves the same everywhere, and SwipeStrip adds
+ * arrows on pointer devices because a mouse is the only input that cannot
+ * scroll sideways on its own.
  *
  * With scripting off it is identical: this is all CSS, and every line and
  * photograph is in the markup.
@@ -122,11 +126,9 @@ export function StandFor({
           inside the scroller, so it becomes leading space rather than a margin
           the cards can never cross.
         */}
-        <div
-          role="region"
-          aria-label={heading}
-          tabIndex={0}
-          className="daar-swipe -mx-5 mt-12 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 py-6 md:mt-16 lg:mx-0 lg:flex-wrap lg:justify-start lg:gap-6 lg:overflow-visible lg:px-0"
+        <SwipeStrip
+          label={heading}
+          className="-mx-5 mt-12 gap-4 px-5 py-6 md:mt-16 lg:gap-6"
         >
           {cards.map((card, i) => {
             const lines = bodyLines(card.body);
@@ -138,7 +140,7 @@ export function StandFor({
                 // shrink-0 or flexbox squeezes every card into one screen and
                 // there is nothing left to scroll. On lg the row wraps instead,
                 // and basis-0/grow lets any number of cards share the width.
-                className={`relative shrink-0 snap-start overflow-hidden rounded-[1.5rem] bg-daar-ink shadow-[0_24px_50px_-18px_rgba(18,16,15,0.7)] lg:min-w-[220px] lg:flex-1 lg:basis-0 lg:shrink ${size.card} lg:w-auto lg:max-w-none`}
+                className={`relative shrink-0 snap-start overflow-hidden rounded-[1.5rem] bg-daar-ink shadow-[0_24px_50px_-18px_rgba(18,16,15,0.7)] ${size.card}`}
                 style={{ rotate: `${TILT[i % TILT.length]}deg` }}
               >
                 <div className="relative aspect-[3/4]">
@@ -180,7 +182,7 @@ export function StandFor({
               </article>
             );
           })}
-        </div>
+        </SwipeStrip>
       </div>
     </section>
   );
