@@ -9,6 +9,7 @@ import { Reveal } from "@/components/site/Reveal";
 import { getSettings, getHours } from "@/lib/menu";
 import { DAY_NAMES, SITE } from "@/lib/config";
 import { socialImage } from "@/lib/seo";
+import { readSocials } from "@/lib/socials";
 
 /**
  * Rendered per request, never at build time.
@@ -46,14 +47,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter,
   };
-}
-
-/** Socials are stored as free-form JSON, so read defensively. */
-function readSocials(value: unknown): { label: string; url: string }[] {
-  if (!value || typeof value !== "object") return [];
-  return Object.entries(value as Record<string, unknown>)
-    .filter((entry): entry is [string, string] => typeof entry[1] === "string" && entry[1].length > 0)
-    .map(([key, url]) => ({ label: key.charAt(0).toUpperCase() + key.slice(1), url }));
 }
 
 export default async function VisitPage() {
@@ -189,7 +182,7 @@ export default async function VisitPage() {
                 <div className="mt-8 flex flex-wrap gap-3">
                   {socials.map((s) => (
                     <a
-                      key={s.label}
+                      key={s.key}
                       href={s.url}
                       target="_blank"
                       rel="noopener noreferrer"

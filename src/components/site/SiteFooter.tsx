@@ -1,16 +1,29 @@
 import Link from "next/link";
 import { BrandMark } from "./BrandMark";
+import { SocialLinks } from "./SocialLinks";
 import { getLogo } from "@/lib/logo";
+import { getSettings } from "@/lib/menu";
+import { readSocials } from "@/lib/socials";
 import { SITE } from "@/lib/config";
 
 export async function SiteFooter({ email, phone }: { email?: string | null; phone?: string | null }) {
   // The designer's single stacked lockup — mark and lettering already spaced
   // as intended. Far better than stacking two separate files by eye.
-  const [lockup, mark, full] = await Promise.all([
+  //
+  // The socials are read here rather than passed in, unlike the address and
+  // phone above. Seven pages render this footer, and a prop would have meant
+  // seven places to remember — which is the shape of the bug being fixed:
+  // the links were in the dashboard and in the database for months, and the
+  // only page that ever showed them was Visit. getSettings is React-cached per
+  // request, so reading it here costs no extra query on any page.
+  const [lockup, mark, full, settings] = await Promise.all([
     getLogo("lockup"),
     getLogo("mark"),
     getLogo("full"),
+    getSettings(),
   ]);
+
+  const socials = readSocials(settings?.socials);
 
   const links = [
     { href: "/", label: "Home" },
@@ -47,6 +60,8 @@ export async function SiteFooter({ email, phone }: { email?: string | null; phon
             </li>
           ))}
         </ul>
+
+        <SocialLinks links={socials} className="mt-4" />
 
         {(email || phone) && (
           <div className="mt-4 flex flex-wrap justify-center gap-x-2 text-sm opacity-70">

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { assertAdmin } from "@/lib/dal";
+import { socialUrl } from "@/lib/socials";
 import { getStorage, buildKey } from "@/lib/storage";
 import { processLogo } from "@/lib/logo-upload";
 import { mapEmbedSrc, isMapEmbed, MAP_EMBED_HELP } from "@/lib/map-embed";
@@ -64,13 +65,6 @@ const SettingsSchema = z.object({
   currency: z.string().trim().min(1).max(8),
 });
 
-/** A social field may be a full URL or a bare handle; store a usable URL. */
-function socialUrl(value: string, base: string): string {
-  const v = value.trim();
-  if (!v) return "";
-  if (/^https?:\/\//i.test(v)) return v;
-  return `${base}${v.replace(/^@/, "")}`;
-}
 
 export async function updateSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   await assertAdmin();
