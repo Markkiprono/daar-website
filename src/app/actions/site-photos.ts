@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { assertAdmin } from "@/lib/dal";
 import { getStorage, buildKey } from "@/lib/storage";
-import { processMenuImage, MAX_UPLOAD_BYTES, ACCEPTED_TYPES } from "@/lib/images";
 import { MAX_VIDEO_MB, VIDEO_TYPES } from "@/lib/image-rules";
+import { processSiteImage, processSiteVideo } from "@/lib/site-media";
 
 export type PhotoState = { ok: true; message: string } | { ok: false; error: string } | undefined;
 
@@ -15,9 +15,6 @@ const SLOTS = {
   story: "storyImageUrl",
   visit: "visitImageUrl",
   chef: "chefImageUrl",
-  panelOne: "panelOneImageUrl",
-  panelTwo: "panelTwoImageUrl",
-  panelThree: "panelThreeImageUrl",
   closing: "closingImageUrl",
   storyBand: "storyBandImageUrl",
 } as const;
@@ -27,49 +24,6 @@ type Slot = keyof typeof SLOTS;
 function revalidatePublic() {
   for (const p of ["/", "/menu", "/story", "/visit", "/reserve"]) revalidatePath(p);
   revalidatePath("/admin/photos");
-}
-
-/** Processes an upload through the shared menu-image pipeline (WebP + blur). */
-async function process(file: File) {
-  if (!ACCEPTED_TYPES.includes(file.type)) {
-    throw new Error(`Unsupported type: ${file.type || "unknown"}. Use JPEG, PNG, WebP or AVIF.`);
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw new Error(`That image is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is 12 MB.`);
-  }
-  const input = Buffer.from(await file.arrayBuffer());
-  // Site photos are used large (hero is full-screen), so allow more width.
-  const processed = await processMenuImage(input, 2000);
-  const storage = await getStorage();
-  const stored = await storage.put(buildKey("site.webp", "site"), processed.buffer, processed.contentType);
-  return { url: stored.url, blur: processed.blurDataUrl };
-}
-
-/**
- * Stores a film byte-for-byte, the way the hero loop always has.
- *
- * No re-encoding: there is no ffmpeg in the runtime image, and transcoding
- * video inside a request is not a thing to start doing. The burden is on the
- * file being sensible before it arrives, which is what the size limit and the
- * wording on the form are for.
- */
-async function processVideo(file: File) {
-  if (!VIDEO_TYPES.includes(file.type)) {
-    throw new Error(
-      `That file is ${file.type || "an unknown type"}. Please use an MP4 or WebM — a .mov from a phone needs converting first.`,
-    );
-  }
-  if (file.size > MAX_VIDEO_MB * 1024 * 1024) {
-    throw new Error(
-      `That video is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${MAX_VIDEO_MB} MB. A background loop should be a few seconds and heavily compressed.`,
-    );
-  }
-
-  const extension = file.type === "video/webm" ? "webm" : "mp4";
-  const bytes = Buffer.from(await file.arrayBuffer());
-  const storage = await getStorage();
-  const stored = await storage.put(buildKey(`site.${extension}`, "site"), bytes, file.type);
-  return { url: stored.url };
 }
 
 /** Best-effort cleanup of a replaced/removed local file. */
@@ -116,7 +70,7 @@ export async function updateSitePhoto(_prev: PhotoState, formData: FormData): Pr
   const video = VIDEO_TYPES.includes(file.type);
 
   try {
-    const { url } = video ? await processVideo(file) : await process(file);
+    const { url } = video ? await processSiteVideo(file) : await processSiteImage(file);
     await db.siteSettings.upsert({
       where: { id: "singleton" },
       update: { [column]: url },
@@ -219,7 +173,7 @@ export async function addStoryPhoto(_prev: PhotoState, formData: FormData): Prom
   if (!file || file.size === 0) return { ok: false, error: "Choose a photo first." };
 
   try {
-    const { url, blur } = await process(file);
+    const { url, blur } = await processSiteImage(file);
     const count = await db.storyPhoto.count();
     await db.storyPhoto.create({
       data: {
@@ -284,7 +238,7 @@ export async function addHomePhoto(_prev: PhotoState, formData: FormData): Promi
   if (!file || file.size === 0) return { ok: false, error: "Choose a photo first." };
 
   try {
-    const { url, blur } = await process(file);
+    const { url, blur } = await processSiteImage(file);
     const count = await db.homePhoto.count();
     await db.homePhoto.create({
       data: {

@@ -154,6 +154,7 @@ body {
   --color-daar-tan: #d2af8a;
   --color-daar-ink: #12100f;
   --color-daar-charcoal: #2a2a2c;
+  --color-daar-clay: #6f5f55;
   --color-daar-slate: #55555a;
   --color-daar-mist: #b9b7b4;
   --color-daar-bone: #faf6ef;
@@ -172,6 +173,9 @@ body {
   /* Neutrals, sampled from the photography */
   --daar-ink: #12100f;
   --daar-charcoal: #2a2a2c;
+  /* Warm mid-tone: the one step between the bone sections and the ink
+     ones, so a long run of dark panels has somewhere to breathe. */
+  --daar-clay: #6f5f55;
   --daar-slate: #55555a;
   --daar-mist: #b9b7b4;
   --daar-bone: #faf6ef;
@@ -292,6 +296,35 @@ body {
 
 /* Two bands of photographs drifting in opposite directions. The track holds
    the list twice, so translating exactly half its width loops seamlessly. */
+/* ------------------------------------------------------------
+   The "What we stand for" swipe strip.
+   ------------------------------------------------------------ */
+
+/* The scrollbar is hidden, not the scrolling. A horizontal bar under four
+   cards is chrome nobody needs on a phone, where the gesture is a finger and
+   the peeking next card already says the strip moves. Everything that makes
+   the region usable — the drag, the trackpad swipe, the arrow keys, the focus
+   ring below — is untouched. */
+.daar-swipe {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+  /* Stops an over-swipe at either end from being handed to the browser, which
+     on iOS is the back gesture: swiping through these cards must never
+     navigate away from the page. */
+  overscroll-behavior-x: contain;
+}
+.daar-swipe::-webkit-scrollbar {
+  display: none;
+}
+/* The strip takes focus so it can be scrolled from the keyboard, so it has to
+   show that it has focus — but only for keyboard users, never as a ring around
+   the cards after a tap. */
+.daar-swipe:focus-visible {
+  outline: 2px solid var(--daar-tan);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+
 .daar-marquee-wrap {
   overflow: hidden;
 }

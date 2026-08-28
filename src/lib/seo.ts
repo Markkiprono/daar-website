@@ -81,7 +81,7 @@ export function bakeryJsonLd(settings: Settings, hours: Hours) {
     isVideoUrl(uploaded) ? fallback : (uploaded ?? fallback);
 
   const images = [
-    stillOr(settings?.heroImageUrl, "/brand/counter.jpg"),
+    stillOr(settings?.heroImageUrl, "/brand/interior-02.jpg"),
     stillOr(settings?.visitImageUrl, "/brand/interior-01.jpg"),
     stillOr(settings?.storyImageUrl, "/brand/patience-plates.jpg"),
   ]

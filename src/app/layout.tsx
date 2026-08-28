@@ -57,7 +57,9 @@ export async function generateMetadata(): Promise<Metadata> {
   // A hero slot holding a film falls back to the brand still: this URL is
   // og:image, and a link that unfurls to an .mp4 shows as a broken box.
   const heroImage = new URL(
-    isVideoUrl(settings?.heroImageUrl) ? "/brand/counter.jpg" : (settings?.heroImageUrl ?? "/brand/counter.jpg"),
+    isVideoUrl(settings?.heroImageUrl)
+      ? "/brand/interior-02.jpg"
+      : (settings?.heroImageUrl ?? "/brand/interior-02.jpg"),
     SITE.url,
   ).toString();
 

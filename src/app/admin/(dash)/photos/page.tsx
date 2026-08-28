@@ -47,7 +47,7 @@ export default async function PhotosPage() {
         <p className="mt-2 text-sm text-neutral-500">
           Most of these take a short video as well as a photo. A film plays silently, repeats, and
           never starts for anyone who has asked their phone to reduce motion or save data — they
-          keep the photo instead.
+          keep the photo instead. A film plays in the one place you put it and nowhere else.
         </p>
       </div>
 
@@ -56,7 +56,7 @@ export default async function PhotosPage() {
           <PhotoSlot
             slot="hero"
             title="Hero background"
-            description="The full-screen photo behind the headline on the home page. Landscape works best."
+            description="The full-screen photo behind the headline — the first thing anyone sees. Landscape works best. Put a short film here instead and it plays silently at the top of the page, on a loop."
             current={settings?.heroImageUrl ?? null}
             aspect="aspect-[16/9]"
             allowVideo
@@ -72,46 +72,9 @@ export default async function PhotosPage() {
           <PhotoSlot
             slot="storyBand"
             title="“Daar means home” photo"
-            description="The arch-shaped photo beside the story on the home page. Until you set one here it borrows the Story page photo below."
+            description="The arch-shaped photo beside the story on the home page. Has its own brand photo until you set one — it used to repeat the Story page photo."
             current={settings?.storyBandImageUrl ?? null}
             aspect="aspect-[3/4]"
-            allowVideo
-          />
-        </div>
-      </Section>
-
-      {/* The three sliding panels. Called by the words on them rather than by
-          position, because "panel two" means nothing to the person looking at
-          the page and the sentence is unmistakable. */}
-      <Section title="Home page — the three sliding panels">
-        <p className="-mt-2 mb-5 text-sm text-neutral-500">
-          The full-screen panels that slide up over one another as you scroll. Each one used to
-          borrow another page’s photo, which is why changing the Visit photo moved the home page
-          too. Set one here and that panel stops borrowing.
-        </p>
-        <div className="space-y-6">
-          <PhotoSlot
-            slot="panelOne"
-            title="“Daar means home.”"
-            description="First panel. Borrows the Story page photo until you set one."
-            current={settings?.panelOneImageUrl ?? null}
-            aspect="aspect-[16/9]"
-            allowVideo
-          />
-          <PhotoSlot
-            slot="panelTwo"
-            title="“One room. One idea.”"
-            description="Second panel. Borrows the hero photo until you set one."
-            current={settings?.panelTwoImageUrl ?? null}
-            aspect="aspect-[16/9]"
-            allowVideo
-          />
-          <PhotoSlot
-            slot="panelThree"
-            title="“The things worth eating can’t be hurried.”"
-            description="Third panel, the one carrying the menu and visit links. Borrows the Visit photo until you set one."
-            current={settings?.panelThreeImageUrl ?? null}
-            aspect="aspect-[16/9]"
             allowVideo
           />
         </div>
@@ -122,7 +85,7 @@ export default async function PhotosPage() {
           <PhotoSlot
             slot="closing"
             title="“Patience tastes better” background"
-            description="The last full-screen section before the address. Borrows the Visit photo until you set one. Setting anything here makes the section appear even without a film below."
+            description="The last full-screen section before the address. Setting anything here makes the section appear even without a film below."
             current={settings?.closingImageUrl ?? null}
             aspect="aspect-[16/9]"
             allowVideo

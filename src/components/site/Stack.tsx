@@ -3,6 +3,10 @@ import Link from "next/link";
 import { MediaBackdrop } from "./MediaBackdrop";
 
 export type Panel = {
+  /** Stable key. The sentence used to serve as one, which broke the moment
+      two panels said the same thing — now that the café writes them, that is
+      no longer unthinkable. */
+  id: string;
   /** The line that sits on this panel. */
   line: string;
   /** Small label above it. */
@@ -39,7 +43,7 @@ export function Stack({ panels }: { panels: Panel[] }) {
     <div className="relative">
       {panels.map((panel, i) => (
         <section
-          key={panel.line}
+          key={panel.id}
           className={[
             "sticky top-0 grid h-screen place-items-center overflow-hidden bg-daar-ink px-5 text-center text-daar-cream",
             i > 0 ? "rounded-t-[1.75rem] shadow-[0_-24px_60px_rgba(18,16,15,.55)]" : "",

@@ -295,14 +295,56 @@ model SiteSettings {
   ///
   /// Any of these may hold a video rather than a photograph — see
   /// src/lib/media.ts. The built-in default is the still frame underneath.
-  panelOneImageUrl   String?
-  panelTwoImageUrl   String?
-  panelThreeImageUrl String?
+  /// The three sliding panels moved to the HomePanel table below, because
+  /// their words had nowhere to live as columns and splitting one panel's
+  /// picture from its sentence across two screens of the dashboard is how
+  /// nobody finds either. Their photographs came with them.
   /// The "Come and see" band at the foot of the home page.
   closingImageUrl String?
   /// The arch beside "Daar means home" on the home page — distinct from
   /// storyImageUrl, which is the Story page's own photograph.
   storyBandImageUrl String?
+
+  /// --- Every fixed label on the home page ---
+  /// These were written into src/app/page.tsx, so correcting a word meant a
+  /// developer and a deploy. Defaults are exactly what the page used to say,
+  /// so nothing moves until the cafe changes it.
+  heroEyebrow        String  @default("")
+  heroPrimaryLabel   String  @default("Explore the menu")
+  heroSecondaryLabel String  @default("Find us")
+
+  counterEyebrow String @default("On the counter")
+  counterHeading String @default("What today looks like")
+
+  chefEyebrow   String @default("From the kitchen")
+  featuredBadge String @default("Chef's Special")
+
+  storyEyebrow String @default("Our story")
+
+  closingEyebrow String @default("Come and see")
+  closingHeading String @default("")
+
+  visitEyebrow String @default("Come in")
+  visitHeading String @default("Visit")
+
+  /// "sm" | "md" | "lg" | "xl" — the size of every section heading on the
+  /// home page. One control rather than nine, so the page stays consistent.
+  homeHeadingSize String @default("lg")
+
+  /// --- "What we stand for", on the home page ---
+  /// The section's own wording and sizing. The cards themselves are rows in
+  /// ValueCard below, because there is no fixed number of them.
+  ///
+  /// These are columns rather than constants in the page source for the
+  /// reason every other field here is: the person who needs to change a
+  /// heading is the cafe, and they must not need a deploy to do it.
+  standForEnabled  Boolean @default(true)
+  standForEyebrow  String  @default("Why we do it this way")
+  standForHeading  String  @default("What we stand for")
+  /// "sm" | "md" | "lg" | "xl" — how large the section heading is set.
+  standForHeadingSize String @default("lg")
+  /// "sm" | "md" | "lg" — the width of the cards and the size of type on them.
+  standForCardSize    String @default("md")
 
   /// --- The chef, on the home page ---
   /// Words published under a named person, so they belong in the dashboard
@@ -385,6 +427,66 @@ model HomePhoto {
   blurDataUrl  String?
   displayOrder Int      @default(0)
   createdAt    DateTime @default(now())
+
+  @@index([displayOrder])
+}
+
+/// One of the full-screen panels that slide up over each other on the home
+/// page, just below the hero.
+///
+/// A table rather than three sets of columns on SiteSettings: the sentences
+/// had no columns at all and were written into the page, while the pictures
+/// were columns — so half a panel was editable and half needed a deploy.
+/// Rows also mean the cafe can run two panels one season and four the next.
+///
+/// `imageUrl` may hold a film as well as a photograph, exactly as the columns
+/// it replaces did — see src/lib/media.ts.
+model HomePanel {
+  id      String  @id @default(cuid())
+  /// Small label above the sentence. Blank on most panels.
+  eyebrow String  @default("")
+  /// The sentence itself — the whole point of the panel.
+  line    String
+
+  imageUrl    String?
+  imageAlt    String?
+  blurDataUrl String?
+
+  /// Up to two links, for the panel that carries them. Both halves must be
+  /// filled in for a link to render; a label with no address is not a link.
+  linkOneLabel String @default("")
+  linkOneHref  String @default("")
+  linkTwoLabel String @default("")
+  linkTwoHref  String @default("")
+
+  displayOrder Int      @default(0)
+  isVisible    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([displayOrder])
+}
+
+/// One card in the home page's "What we stand for" strip.
+///
+/// `body` holds the lines as entered, newline-separated, and the public
+/// component sets each line on its own — that is the look, and asking the
+/// cafe to fill in three separate "line" fields to get it would be a worse
+/// dashboard for the same result.
+///
+/// isVisible rather than deleting: a card taken down for a season should not
+/// mean retyping it and re-uploading its photograph in three months.
+model ValueCard {
+  id           String   @id @default(cuid())
+  title        String
+  body         String   @default("")
+  imageUrl     String?
+  imageAlt     String?
+  blurDataUrl  String?
+  displayOrder Int      @default(0)
+  isVisible    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([displayOrder])
 }

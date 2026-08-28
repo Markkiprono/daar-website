@@ -6,9 +6,19 @@ import { Reveal } from "@/components/site/Reveal";
 import { MediaBackdrop } from "@/components/site/MediaBackdrop";
 import { Stack } from "@/components/site/Stack";
 import { Marquee, type Frame } from "@/components/site/Marquee";
-import { getFeatured, getSettings, getHours, getGallery, getHomePhotos } from "@/lib/menu";
+import {
+  getFeatured,
+  getSettings,
+  getHours,
+  getGallery,
+  getHomePhotos,
+  getValueCards,
+  getHomePanels,
+} from "@/lib/menu";
 import { formatPrice, DAY_NAMES, SITE } from "@/lib/config";
 import { splitMedia } from "@/lib/media";
+import { SECTION_HEADING_SIZE_CLASS, headingSize } from "@/lib/home-sections";
+import { StandFor } from "@/components/site/StandFor";
 import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 
 /** Menu and content change from the dashboard, so don't cache indefinitely. */
@@ -28,12 +38,14 @@ import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, settings, hours, gallery, chosen] = await Promise.all([
+  const [featured, settings, hours, gallery, chosen, valueCards, homePanels] = await Promise.all([
     getFeatured(),
     getSettings(),
     getHours(),
     getGallery(),
     getHomePhotos(),
+    getValueCards(),
+    getHomePanels(),
   ]);
 
   /**
@@ -86,37 +98,76 @@ export default async function HomePage() {
   /**
    * Every backdrop the dashboard can set, resolved once.
    *
-   * The fallbacks are the exact expressions these sections used before they
-   * had slots of their own — panel two really did show the hero photograph,
-   * and the closing band really did show the Visit one. Keeping those as the
-   * defaults means nothing on the live site moves the day this ships: the
-   * coupling only ends for a section once the café puts its own picture in.
+   * Each of these sections once borrowed another page's photograph, from the
+   * days before it had a slot of its own. Two of those borrows survive, on
+   * the terms below; the rest have their own brand artwork.
    *
    * splitMedia decides which of the pair a slot is holding. A slot with a
    * film in it hands back the built-in default as the still underneath, so a
    * video upload can never leave a section blank.
+   *
+   * NOTHING ON THIS PAGE BORROWS A PICTURE FROM ANYWHERE ELSE ANY MORE, and
+   * that is the fix for two separate bugs rather than a tidy-up.
+   *
+   * Each of these sections used to fall back to one of the three original
+   * slots — panel two showed the hero photograph, the arch showed the Story
+   * one, the closing band showed Visit. A café that filled in the three
+   * fields it was offered therefore got six full-screen sections showing
+   * three pictures, each of them twice. And because a slot may hold a film,
+   * one upload into the Story slot played the same few seconds twice on this
+   * page and again on the Story page — the "it shows up three times" this all
+   * started with.
+   *
+   * Every section now owns what it displays: the panels are rows in
+   * HomePanel, and the rest are their own columns. There is no fallback chain
+   * left to repeat anything.
    */
-  const brandHero = "/brand/counter.jpg";
+  /* The opening photograph is the room, not the merchandise: this was the
+     takeaway boxes on the marbled table (counter.jpg), which is a fine
+     picture of the packaging and a poor first impression of a bakery. It
+     still appears in the drifting band below, at the size it deserves. */
+  const brandHero = "/brand/interior-02.jpg";
   const brandStory = "/brand/patience-plates.jpg";
 
   const hero = splitMedia(settings?.heroImageUrl, brandHero);
-  const storyBand = splitMedia(
-    settings?.storyBandImageUrl ?? settings?.storyImageUrl,
-    brandStory,
-  );
-  const panelOne = splitMedia(
-    settings?.panelOneImageUrl ?? settings?.storyImageUrl,
+  /**
+   * The sliding panels, now rows the café writes and illustrates themselves.
+   *
+   * Each falls back to a different brand still, cycled by position, so a
+   * café that adds three panels before photographing any of them gets three
+   * different pictures rather than the same one three times. splitMedia still
+   * decides whether the stored URL is a photograph or a film.
+   */
+  const PANEL_FALLBACKS = [
     "/brand/interior-01.jpg",
-  );
-  const panelTwo = splitMedia(settings?.panelTwoImageUrl ?? settings?.heroImageUrl, brandHero);
-  const panelThree = splitMedia(
-    settings?.panelThreeImageUrl ?? settings?.visitImageUrl,
-    brandStory,
-  );
-  const closing = splitMedia(
-    settings?.closingImageUrl ?? settings?.visitImageUrl,
     "/brand/terrace-drink.jpg",
-  );
+    brandStory,
+    "/brand/interior-02.jpg",
+  ];
+  const panels = homePanels.map((panel, i) => {
+    const media = splitMedia(panel.imageUrl, PANEL_FALLBACKS[i % PANEL_FALLBACKS.length]!);
+    const links = [
+      { label: panel.linkOneLabel, href: panel.linkOneHref },
+      { label: panel.linkTwoLabel, href: panel.linkTwoHref },
+    ].filter((l) => l.label && l.href);
+    return {
+      id: panel.id,
+      eyebrow: panel.eyebrow || undefined,
+      line: panel.line,
+      image: media.image,
+      video: media.video,
+      alt: panel.imageAlt ?? "Inside Daar",
+      links: links.length > 0 ? links : undefined,
+    };
+  });
+
+  /* One size for every section heading down the page, chosen in the
+     dashboard — see src/lib/home-sections.ts. */
+  const sectionHeading = SECTION_HEADING_SIZE_CLASS[headingSize(settings?.homeHeadingSize)];
+  const storyBand = splitMedia(settings?.storyBandImageUrl, "/brand/item-tart.jpg");
+  /* Only ever a poster frame: this section does not render at all without a
+     film or a photograph of its own, a few lines below. */
+  const closing = splitMedia(settings?.closingImageUrl, brandStory);
 
   /* The closing band predates its own slot: it existed only to carry the
      "Film" upload, and disappeared without one. It now also appears for a
@@ -153,7 +204,7 @@ export default async function HomePage() {
         <MediaBackdrop
           image={hero.image}
           video={hero.video}
-          alt="Inside Daar — takeaway boxes on a paint-marbled table"
+          alt="Inside Daar"
         />
         <div className="daar-tex-hero pointer-events-none absolute inset-0" />
 
@@ -168,7 +219,8 @@ export default async function HomePage() {
               text-balance so that if it ever does wrap, it wraps evenly rather
               than leaving one orphaned word. */}
           <p className="text-balance font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.13em] text-daar-tan sm:tracking-[0.18em]">
-            {SITE.area}, {SITE.city} · {SITE.descriptor}
+            {settings?.heroEyebrow?.trim() ||
+              `${SITE.area}, ${SITE.city} · ${SITE.descriptor}`}
           </p>
           <h1 className="mt-4 font-[family-name:var(--font-display)] text-[clamp(2.75rem,11vw,7rem)] leading-[0.94] tracking-[-0.015em] text-daar-bone">
             {settings?.heroHeadline ?? "Patience tastes better"}
@@ -183,13 +235,13 @@ export default async function HomePage() {
               href="/menu"
               className="rounded-full bg-gradient-to-br from-daar-tan to-daar-ochre px-9 py-4 font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-ink transition hover:-translate-y-0.5 hover:brightness-105"
             >
-              Explore the menu
+              {settings?.heroPrimaryLabel || "Explore the menu"}
             </Link>
             <Link
               href="/visit"
               className="rounded-full border border-daar-cream px-9 py-4 font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-cream transition hover:-translate-y-0.5 hover:bg-daar-cream hover:text-daar-ink"
             >
-              Find us
+              {settings?.heroSecondaryLabel || "Find us"}
             </Link>
           </div>
         </div>
@@ -206,82 +258,31 @@ export default async function HomePage() {
 
       {/* ---------- THE IDEA ----------
           The café's own sentence, one panel at a time, each sliding up over
-          the last instead of a paragraph nobody stops for. */}
-      <Stack
-        panels={[
-          {
-            eyebrow: "Daar means home",
-            line: "Daar means home.",
-            image: panelOne.image,
-            video: panelOne.video,
-            alt: "Inside Daar — brushed steel against the plaster wall",
-          },
-          {
-            line: "One room. One idea.",
-            image: panelTwo.image,
-            video: panelTwo.video,
-            alt: "The counter at Daar",
-          },
-          {
-            line: "The things worth eating can’t be hurried.",
-            image: panelThree.image,
-            video: panelThree.video,
-            alt: "Daar plates reading ‘Patience tastes better’",
-            links: [
-              { label: "See the menu", href: "/menu" },
-              { label: "Plan your visit", href: "/visit" },
-            ],
-          },
-        ]}
-      />
+          the last instead of a paragraph nobody stops for. Every sentence,
+          picture and button comes from Sections in the dashboard. */}
+      {panels.length > 0 && <Stack panels={panels} />}
 
-      {/* ---------- WHAT WE DO ----------
-          Laid out like a spread rather than three equal columns: the number
-          hangs in the margin, the rules run the full measure, and the rows
-          alternate so the eye moves down the page instead of straight across
-          three identical boxes. */}
-      <section className="bg-daar-bone px-5 py-28 text-daar-ink">
-        <div className="mx-auto max-w-[1240px]">
-          <Reveal className="mb-16 border-b border-daar-rule pb-8">
-            <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-              What we do
-            </p>
-          </Reveal>
-
-          <div className="divide-y divide-daar-rule">
-            {[
-              {
-                title: "Proved slowly",
-                body: "Dough is given the hours it asks for. There is no version of this that goes faster, and we have stopped looking for one.",
-              },
-              {
-                title: "Baked this morning",
-                body: "Everything on the counter was made in our kitchen today. What sells out, sells out — we would rather run short than bake ahead.",
-              },
-              {
-                title: "Room to sit",
-                body: `The whole fourth floor of The Mandrake, in ${SITE.area}. Come for a coffee and stay for the afternoon; nobody will hurry you along.`,
-              },
-            ].map((pillar, i) => (
-              <Reveal
-                key={pillar.title}
-                delay={i * 90}
-                className="grid gap-4 py-10 md:grid-cols-[5rem_1fr_1.1fr] md:items-baseline md:gap-10 md:py-14"
-              >
-                <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
-                  {String(i + 1).padStart(2, "0")}
-                </p>
-                <h3 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,5vw,3rem)] leading-[1.02]">
-                  {pillar.title}
-                </h3>
-                <p className="max-w-[46ch] font-light leading-relaxed text-daar-muted">
-                  {pillar.body}
-                </p>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* ---------- WHAT WE STAND FOR ----------
+          Every word, picture and size comes from the dashboard — Sections in
+          the admin. This was four cards written into this file, which meant
+          the café could not fix their own typo without a deploy. The section
+          hides itself when it is switched off or has no visible cards. */}
+      {settings?.standForEnabled !== false && (
+        <StandFor
+          eyebrow={settings?.standForEyebrow ?? null}
+          heading={settings?.standForHeading ?? "What we stand for"}
+          headingSize={settings?.standForHeadingSize ?? null}
+          cardSize={settings?.standForCardSize ?? null}
+          cards={valueCards.map((c) => ({
+            id: c.id,
+            title: c.title,
+            body: c.body,
+            imageUrl: c.imageUrl,
+            imageAlt: c.imageAlt,
+            blurDataUrl: c.blurDataUrl,
+          }))}
+        />
+      )}
 
       {/* ---------- THE COUNTER ----------
           Real plates, drifting past. Menu photographs first, the room behind
@@ -290,10 +291,12 @@ export default async function HomePage() {
         <section className="overflow-hidden bg-daar-ink py-24 text-daar-cream">
           <Reveal className="mx-auto mb-12 max-w-[1240px] px-5">
             <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
-              On the counter
+              {settings?.counterEyebrow || "On the counter"}
             </p>
-            <h2 className="mt-3 max-w-[16ch] font-[family-name:var(--font-display)] text-[clamp(2rem,6vw,3.5rem)] leading-[1.02]">
-              What today looks like
+            <h2
+              className={`mt-3 max-w-[16ch] font-[family-name:var(--font-display)] leading-[1.02] ${sectionHeading}`}
+            >
+              {settings?.counterHeading || "What today looks like"}
             </h2>
           </Reveal>
 
@@ -325,7 +328,7 @@ export default async function HomePage() {
 
             <Reveal>
               <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-                From the kitchen
+                {settings?.chefEyebrow || "From the kitchen"}
               </p>
               <blockquote className="mt-6 font-[family-name:var(--font-display)] text-[clamp(1.5rem,3.6vw,2.5rem)] leading-[1.15]">
                 &ldquo;{settings.chefQuote}&rdquo;
@@ -354,7 +357,7 @@ export default async function HomePage() {
           <div className="mx-auto grid max-w-[1240px] items-center gap-12 lg:grid-cols-[1.05fr_.95fr] lg:gap-20">
             <Reveal className="relative aspect-[4/3] overflow-hidden rounded-[3px] bg-daar-slate">
               <span className="absolute left-4 top-4 z-10 rounded-full bg-gradient-to-br from-daar-tan to-daar-ochre px-4 py-1.5 font-[family-name:var(--font-label)] text-[10px] uppercase tracking-[0.18em] text-daar-ink">
-                Chef&apos;s Special
+                {settings?.featuredBadge || "Chef’s Special"}
               </span>
               <Image
                 src={featured.imageUrl ?? "/brand/item-04.jpg"}
@@ -406,7 +409,7 @@ export default async function HomePage() {
             <MediaBackdrop
               image={storyBand.image}
               video={storyBand.video}
-              alt="Daar plates reading ‘Patience tastes better’"
+              alt="Inside Daar"
               priority={false}
               overlayClassName=""
               sizes="(min-width: 1024px) 480px, 92vw"
@@ -414,9 +417,11 @@ export default async function HomePage() {
           </Reveal>
           <Reveal>
             <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
-              Our story
+              {settings?.storyEyebrow || "Our story"}
             </p>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-[clamp(2rem,7vw,4rem)] leading-none">
+            <h2
+              className={`mt-3 font-[family-name:var(--font-display)] leading-none ${sectionHeading}`}
+            >
               {settings?.storyTitle}
             </h2>
             {settings?.storyBody && (
@@ -448,10 +453,12 @@ export default async function HomePage() {
           />
           <div className="relative z-10 mx-auto max-w-[820px] py-24">
             <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
-              Come and see
+              {settings?.closingEyebrow || "Come and see"}
             </p>
-            <h2 className="mt-4 font-[family-name:var(--font-display)] text-[clamp(2rem,7vw,4.5rem)] leading-[1.02] text-daar-bone">
-              {SITE.tagline}
+            <h2
+              className={`mt-4 font-[family-name:var(--font-display)] leading-[1.02] text-daar-bone ${sectionHeading}`}
+            >
+              {settings?.closingHeading?.trim() || SITE.tagline}
             </h2>
           </div>
         </section>
@@ -462,10 +469,12 @@ export default async function HomePage() {
         <div className="mx-auto max-w-[1240px]">
           <Reveal className="mx-auto mb-12 max-w-[640px] text-center">
             <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-muted">
-              Come in
+              {settings?.visitEyebrow || "Come in"}
             </p>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-[clamp(2rem,7vw,4rem)] leading-none">
-              Visit
+            <h2
+              className={`mt-3 font-[family-name:var(--font-display)] leading-none ${sectionHeading}`}
+            >
+              {settings?.visitHeading || "Visit"}
             </h2>
             <div className="mx-auto mt-6 h-px w-16 bg-[linear-gradient(90deg,transparent,var(--daar-tan),transparent)]" />
             <Link

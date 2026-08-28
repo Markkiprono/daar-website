@@ -82,7 +82,7 @@ export const getGallery = cache(async () => {
       SELECT i."id", i."name", i."imageUrl", i."imageAlt", i."blurDataUrl"
       FROM "MenuItem" i
       JOIN "Category" c ON c."id" = i."categoryId"
-      WHERE i."imageUrl" IS NOT NULL AND c."isVisible"
+      WHERE i."imageUrl" IS NOT NULL AND c."isVisible" AND NOT i."isFeatured"
       ORDER BY RANDOM()
       LIMIT 5
     `
@@ -100,6 +100,43 @@ export const getHomePhotos = cache(async () => {
   return db.homePhoto
     .findMany({ orderBy: { displayOrder: "asc" } })
     .catch(survive("getHomePhotos", [] as never[]));
+});
+
+/**
+ * The published sliding panels, in the café's order.
+ *
+ * Hidden panels are filtered here so every surface agrees what "published"
+ * means. None is a legitimate state: the stack simply does not render.
+ */
+export const getHomePanels = cache(async () => {
+  return db.homePanel
+    // createdAt breaks a tie the same way on every render. The page is
+    // force-dynamic, so an unstable sort would reorder sections between
+    // one visitor and the next.
+    .findMany({
+      where: { isVisible: true },
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+    })
+    .catch(survive("getHomePanels", [] as never[]));
+});
+
+/**
+ * The published "What we stand for" cards, in the café's order.
+ *
+ * Hidden cards are filtered here rather than on the page, so every surface
+ * that ever renders them agrees about what "published" means. An empty result
+ * is normal, not a failure: the section simply does not render.
+ */
+export const getValueCards = cache(async () => {
+  return db.valueCard
+    // createdAt breaks a tie the same way on every render. The page is
+    // force-dynamic, so an unstable sort would reorder sections between
+    // one visitor and the next.
+    .findMany({
+      where: { isVisible: true },
+      orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+    })
+    .catch(survive("getValueCards", [] as never[]));
 });
 
 export const getFeatured = cache(async () => {
