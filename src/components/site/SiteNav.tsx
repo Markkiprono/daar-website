@@ -69,7 +69,36 @@ export function SiteNav({
             : "border-transparent bg-transparent",
         ].join(" ")}
       >
-        <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-5 px-5 py-4">
+        {/*
+          A scrim under the transparent header, and the reason it exists:
+          the lettering and the links are cream and tan, which read perfectly
+          over the dark photograph the hero used to hold and vanish completely
+          over a bright one. The café can put any film they like behind this —
+          a white sky, a sunlit street — and the navigation has to stay legible
+          over all of them.
+
+          Darkening the hero itself was the alternative and is worse: the
+          backdrop's own scrim is deliberately light at the top so the
+          photograph is not muddied, and heavier overlays would dim the whole
+          picture to protect four words. This darkens only the strip the words
+          sit on, fades to nothing well before the headline, and is dropped
+          entirely the moment the header turns opaque on scroll.
+        */}
+        {!opaque && (
+          <div
+            aria-hidden
+            // The stops are placed against the header's own height, not by
+            // eye. This box is 190% of the header, so the bar itself occupies
+            // the top ~53% and the words sit around 26% down. Holding the
+            // scrim near-opaque through that band — rather than letting it
+            // fade from the very first pixel — is what keeps cream lettering
+            // above 4.5:1 against a white sky. Everything below 52% is just
+            // the fade out, where nothing has to stay readable.
+            className="pointer-events-none absolute inset-x-0 top-0 h-[190%] bg-[linear-gradient(180deg,rgba(18,16,15,0.82),rgba(18,16,15,0.66)_52%,transparent)]"
+          />
+        )}
+
+        <div className="relative mx-auto flex max-w-[1240px] items-center justify-between gap-5 px-5 py-4">
           <Link
             href="/"
             className="flex items-center gap-3 text-daar-cream"
