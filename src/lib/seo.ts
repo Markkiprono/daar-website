@@ -65,6 +65,40 @@ function schemaPrice(priceCents: number): string {
   return String(Math.round(priceCents / 100));
 }
 
+/**
+ * The café's coordinates, when they are actually coordinates.
+ *
+ * Truthiness is not enough of a test here, and the site was published wrong
+ * for it. The columns hold text, a blank latitude box was being stored as the
+ * string "0" (see the note in src/app/actions/settings.ts), and "0" is a
+ * perfectly truthy string — so `latitude && longitude` passed and Google was
+ * told the bakery sits at 0°N 0°E: open water in the Gulf of Guinea, roughly
+ * 500 km off West Africa, directly contradicting the Westlands street address
+ * in the same block. A coordinate that disagrees with the address is worse
+ * than no coordinate, because `geo` is what feeds the local map pack.
+ *
+ * Null Island is rejected only when BOTH are zero. A latitude of exactly zero
+ * is otherwise legitimate — the equator runs through this country — so the
+ * pair is judged together rather than each half on its own.
+ */
+function coordinates(latitude: string | null | undefined, longitude: string | null | undefined) {
+  if (latitude == null || longitude == null) return null;
+
+  const lat = Number(latitude);
+  const lon = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  if (lat === 0 && lon === 0) return null;
+
+  return {
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: String(lat),
+      longitude: String(lon),
+    },
+  } as const;
+}
+
 export function bakeryJsonLd(settings: Settings, hours: Hours) {
   const socials =
     settings?.socials && typeof settings.socials === "object"
@@ -116,15 +150,7 @@ export function bakeryJsonLd(settings: Settings, hours: Hours) {
       addressCountry: "KE",
     },
     // Coordinates put the pin in the right place; omitted rather than guessed.
-    ...(settings?.latitude && settings?.longitude
-      ? {
-          geo: {
-            "@type": "GeoCoordinates",
-            latitude: settings.latitude,
-            longitude: settings.longitude,
-          },
-        }
-      : {}),
+    ...(coordinates(settings?.latitude, settings?.longitude) ?? {}),
     hasMap: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${SITE.name} ${address}`)}`,
     ...(settings?.phone ? { telephone: settings.phone } : {}),
     ...(settings?.email ? { email: settings.email } : {}),

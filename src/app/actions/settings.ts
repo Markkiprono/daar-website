@@ -25,6 +25,13 @@ const MapEmbed = z
   .transform(mapEmbedSrc)
   .refine((v) => v === "" || isMapEmbed(v), MAP_EMBED_HELP);
 
+/** A coordinate, or nothing at all — never an accidental zero. */
+const Coordinate = (min: number, max: number) =>
+  z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.coerce.number().min(min).max(max).optional(),
+  );
+
 const SettingsSchema = z.object({
   // Contact
   addressLine: z.string().trim().min(1, "Address is required").max(200),
@@ -35,8 +42,16 @@ const SettingsSchema = z.object({
 
   // Structured-data only. Bounds are the real limits of each coordinate, so a
   // transposed pair or a stray character is rejected rather than published.
-  latitude: z.coerce.number().min(-90).max(90).optional().or(z.literal("")),
-  longitude: z.coerce.number().min(-180).max(180).optional().or(z.literal("")),
+  //
+  // The empty string is turned into `undefined` BEFORE the coercion rather
+  // than being offered as an alternative after it. `z.coerce.number()` reads
+  // "" as 0 — Number("") is 0 — so the union never reached its `""` branch
+  // and a blank latitude box was stored as the string "0". A café that simply
+  // left these alone was published to Google at 0°N 0°E, a spot in the Gulf
+  // of Guinea about 500 km off West Africa, contradicting the street address
+  // directly above it in the same structured data.
+  latitude: Coordinate(-90, 90),
+  longitude: Coordinate(-180, 180),
   priceRange: z.string().trim().max(8).optional().or(z.literal("")),
 
   // Socials
@@ -145,8 +160,8 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
         mapEmbedUrl: d.mapEmbedUrl || null,
         // Stored as text: schema.org wants the string form, and this avoids
         // a float silently rounding the last decimal off a map pin.
-        latitude: d.latitude === "" || d.latitude === undefined ? null : String(d.latitude),
-        longitude: d.longitude === "" || d.longitude === undefined ? null : String(d.longitude),
+        latitude: d.latitude === undefined ? null : String(d.latitude),
+        longitude: d.longitude === undefined ? null : String(d.longitude),
         priceRange: d.priceRange || null,
         socials,
         heroHeadline: d.heroHeadline,
