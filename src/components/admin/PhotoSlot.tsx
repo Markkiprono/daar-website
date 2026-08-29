@@ -35,7 +35,59 @@ export function PhotoSlot({
   allowVideo?: boolean;
 }) {
   const action = favicon ? updateFavicon : updateSitePhoto;
+  // Held out here so the result survives the remount below, rather than
+  // flashing away the moment the save it describes succeeds.
   const [state, formAction, pending] = useActionState<PhotoState, FormData>(action, undefined);
+
+  /**
+   * Keyed on what is currently stored — see the long note in HeroVideoSlot.
+   *
+   * The same dead end lived here. Tick "remove", save, and the stored URL
+   * becomes null; the tickbox only renders while there is something to
+   * remove, so it disappeared while its state stayed ticked, which left the
+   * file input disabled and posted no "remove" field on the next attempt.
+   * The slot could not be used again until the page was reloaded.
+   */
+  return (
+    <PhotoSlotForm
+      key={current ?? "empty"}
+      slot={slot}
+      title={title}
+      description={description}
+      current={current}
+      aspect={aspect}
+      favicon={favicon}
+      allowVideo={allowVideo}
+      state={state}
+      formAction={formAction}
+      pending={pending}
+    />
+  );
+}
+
+function PhotoSlotForm({
+  slot,
+  title,
+  description,
+  current,
+  aspect,
+  favicon,
+  allowVideo,
+  state,
+  formAction,
+  pending,
+}: {
+  slot: string;
+  title: string;
+  description: string;
+  current: string | null;
+  aspect: string;
+  favicon: boolean;
+  allowVideo: boolean;
+  state: PhotoState;
+  formAction: (formData: FormData) => void;
+  pending: boolean;
+}) {
   const [preview, setPreview] = useState<string | null>(current);
   const [error, setError] = useState<string | null>(null);
   const [remove, setRemove] = useState(false);
