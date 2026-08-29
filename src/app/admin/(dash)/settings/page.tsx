@@ -89,6 +89,7 @@ export default async function AdminSettingsPage() {
           phone: settings?.phone ?? "",
           whatsapp: settings?.whatsapp ?? "",
           email: settings?.email ?? "",
+          reservationsEmail: settings?.reservationsEmail ?? "",
           mapEmbedUrl: settings?.mapEmbedUrl ?? "",
           latitude: settings?.latitude ?? "",
           longitude: settings?.longitude ?? "",

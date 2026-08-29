@@ -14,6 +14,7 @@ export type SettingsValues = {
   phone: string;
   whatsapp: string;
   email: string;
+  reservationsEmail: string;
   mapEmbedUrl: string;
   latitude: string;
   longitude: string;
@@ -220,6 +221,23 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" defaultValue={values.email} />
+          <p className="text-xs text-neutral-500">
+            Shown on the site, and where messages from the contact form are sent.
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="reservationsEmail">Bookings email (optional)</Label>
+          <Input
+            id="reservationsEmail"
+            name="reservationsEmail"
+            type="email"
+            defaultValue={values.reservationsEmail}
+            placeholder="reservations@daarbyizzi.com"
+          />
+          <p className="text-xs text-neutral-500">
+            Where booking requests are emailed, if that is a different inbox. Leave empty and
+            they go to the address above with everything else. Not shown on the site.
+          </p>
         </div>
       </Section>
 

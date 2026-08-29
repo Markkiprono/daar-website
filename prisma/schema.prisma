@@ -377,6 +377,10 @@ model SiteSettings {
   whatsapp   String?
   email      String?
 
+  /// Where booking requests are emailed, when that is not the same inbox as
+  /// general enquiries. Blank means they go to `email` like everything else.
+  reservationsEmail String?
+
   /// { instagram, tiktok, facebook, ... }
   socials Json @default("{}")
 

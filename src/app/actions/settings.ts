@@ -38,6 +38,7 @@ const SettingsSchema = z.object({
   phone: z.string().trim().max(30).optional().or(z.literal("")),
   whatsapp: z.string().trim().max(30).optional().or(z.literal("")),
   email: z.string().trim().max(120).optional().or(z.literal("")),
+  reservationsEmail: z.string().trim().max(120).optional().or(z.literal("")),
   mapEmbedUrl: MapEmbed.optional().or(z.literal("")),
 
   // Structured-data only. Bounds are the real limits of each coordinate, so a
@@ -89,6 +90,7 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
     phone: formData.get("phone") ?? "",
     whatsapp: formData.get("whatsapp") ?? "",
     email: formData.get("email") ?? "",
+    reservationsEmail: formData.get("reservationsEmail") ?? "",
     mapEmbedUrl: formData.get("mapEmbedUrl") ?? "",
     latitude: formData.get("latitude") ?? "",
     longitude: formData.get("longitude") ?? "",
@@ -157,6 +159,7 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
         phone: d.phone || null,
         whatsapp: d.whatsapp || null,
         email: d.email || null,
+        reservationsEmail: d.reservationsEmail || null,
         mapEmbedUrl: d.mapEmbedUrl || null,
         // Stored as text: schema.org wants the string form, and this avoids
         // a float silently rounding the last decimal off a map pin.

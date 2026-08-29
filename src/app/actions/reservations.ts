@@ -4,14 +4,17 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { assertAdmin } from "@/lib/dal";
-import { cafeNow, isSlotBookable, slotsForHours, LEAD_MINUTES } from "@/lib/time";
+import {
+  cafeNow,
+  isSlotBookable,
+  slotsForHours,
+  LEAD_MINUTES,
+} from "@/lib/time";
 import { notifyOwner } from "@/lib/email";
 import { ReservationStatus } from "@/generated/prisma/client";
 
 export type ReservationState =
-  | { ok: true; reference: string }
-  | { ok: false; error: string }
-  | undefined;
+  { ok: true; reference: string } | { ok: false; error: string } | undefined;
 
 /**
  * Public booking request.
@@ -28,7 +31,12 @@ const ReservationSchema = z.object({
     .min(7, "Please enter a phone number we can reach you on")
     .max(30)
     .regex(/^[+\d][\d\s()-]+$/, "That phone number doesn't look right"),
-  email: z.string().trim().min(1, "Please enter your email").email("That email doesn't look right").max(120),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Please enter your email")
+    .email("That email doesn't look right")
+    .max(120),
   partySize: z.coerce.number().int().min(1, "At least one guest").max(50),
   date: z.string().min(1, "Please choose a date"),
   time: z.string().regex(/^\d{2}:\d{2}$/, "Please choose a time"),
@@ -57,7 +65,10 @@ export async function createReservation(
   });
 
   if (!parsed.success) {
-    return { ok: false, error: parsed.error.issues[0]?.message ?? "Please check the form." };
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Please check the form.",
+    };
   }
 
   const d = parsed.data;
@@ -65,7 +76,8 @@ export async function createReservation(
   // Dates arrive as "YYYY-MM-DD" from the date input. Parse as UTC midnight so
   // the stored day matches what the guest picked regardless of server timezone.
   const [y, m, day] = d.date.split("-").map(Number);
-  if (!y || !m || !day) return { ok: false, error: "Please choose a valid date." };
+  if (!y || !m || !day)
+    return { ok: false, error: "Please choose a valid date." };
   const date = new Date(Date.UTC(y, m - 1, day));
 
   // "Now" is the café's clock, never the server's and never the guest's —
@@ -95,9 +107,14 @@ export async function createReservation(
     return { ok: false, error: "Please book within the next six months." };
   }
 
-  const settings = await db.siteSettings.findUnique({ where: { id: "singleton" } });
+  const settings = await db.siteSettings.findUnique({
+    where: { id: "singleton" },
+  });
   if (settings && !settings.reservationsEnabled) {
-    return { ok: false, error: "Online booking is closed at the moment — please call us." };
+    return {
+      ok: false,
+      error: "Online booking is closed at the moment — please call us.",
+    };
   }
   if (settings && d.partySize > settings.maxPartySize) {
     return {
@@ -107,14 +124,19 @@ export async function createReservation(
   }
 
   // Refuse bookings on a day the café is shut.
-  const hours = await db.openingHours.findUnique({ where: { dayOfWeek: date.getUTCDay() } });
+  const hours = await db.openingHours.findUnique({
+    where: { dayOfWeek: date.getUTCDay() },
+  });
   if (hours?.isClosed) {
     return { ok: false, error: "We're closed that day — please pick another." };
   }
   // Checked against the very slots the form offers, so the two can't disagree
   // — a string compare against closeTime alone accepted a table booked for the
   // exact minute of closing.
-  const slots = slotsForHours(hours?.openTime ?? null, hours?.closeTime ?? null);
+  const slots = slotsForHours(
+    hours?.openTime ?? null,
+    hours?.closeTime ?? null,
+  );
   if (slots.length > 0 && !slots.includes(d.time)) {
     return {
       ok: false,
@@ -145,7 +167,9 @@ export async function createReservation(
   const sameSlot = await db.reservation.findMany({
     where: { date, time: d.time, status: { not: ReservationStatus.CANCELLED } },
   });
-  const existing = sameSlot.find((r) => digitsOnly(r.phone) === digitsOnly(d.phone));
+  const existing = sameSlot.find(
+    (r) => digitsOnly(r.phone) === digitsOnly(d.phone),
+  );
 
   if (existing) {
     const unchanged =
@@ -181,19 +205,25 @@ export async function createReservation(
     });
 
     try {
-      await notifyOwner({
-        subject: `Booking request CHANGED — ${d.name}, now ${d.partySize} on ${d.date} at ${d.time}`,
-        replyTo: d.email,
-        lines: [
-          `${d.name} has changed an existing request.`,
-          `Now ${d.partySize} ${d.partySize === 1 ? "guest" : "guests"} (was ${existing.partySize}).`,
-          `${d.date} at ${d.time}`,
-          `Phone: ${d.phone}`,
-          `Email: ${d.email}`,
-          d.occasion ? `Occasion: ${d.occasion}` : "",
-          d.notes ? `Notes: ${d.notes}` : "",
-        ].filter(Boolean),
-      });
+      await notifyOwner(
+        {
+          subject: `Booking request CHANGED — ${d.name}, now ${d.partySize} on ${d.date} at ${d.time}`,
+          replyTo: d.email,
+          lines: [
+            `${d.name} has changed an existing request.`,
+            `Now ${d.partySize} ${d.partySize === 1 ? "guest" : "guests"} (was ${existing.partySize}).`,
+            `${d.date} at ${d.time}`,
+            `Phone: ${d.phone}`,
+            `Email: ${d.email}`,
+            d.occasion ? `Occasion: ${d.occasion}` : "",
+            d.notes ? `Notes: ${d.notes}` : "",
+          ].filter(Boolean),
+        },
+        // A change to a booking belongs in the same inbox the booking arrived
+        // in. This passed no recipient at all, so it reached whoever EMAIL_TO
+        // happened to name — or nobody, if that was unset.
+        settings?.reservationsEmail || settings?.email,
+      );
     } catch {
       /* The change is saved and visible in the dashboard; email is a courtesy. */
     }
@@ -234,7 +264,9 @@ export async function createReservation(
           "This is a REQUEST — confirm or decline it in the dashboard.",
         ].filter(Boolean),
       },
-      settings?.email,
+      // Bookings go to the bookings inbox when the café keeps a separate one,
+      // and to the general contact address when they do not.
+      settings?.reservationsEmail || settings?.email,
     );
   } catch {
     /* booking is saved; a failed notification is not the guest's problem */
@@ -253,7 +285,8 @@ export async function setReservationStatus(formData: FormData) {
 
   const id = String(formData.get("id"));
   const raw = String(formData.get("status"));
-  if (!Object.values(ReservationStatus).includes(raw as ReservationStatus)) return;
+  if (!Object.values(ReservationStatus).includes(raw as ReservationStatus))
+    return;
 
   await db.reservation.update({
     where: { id },

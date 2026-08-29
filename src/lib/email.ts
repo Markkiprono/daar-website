@@ -27,7 +27,21 @@ export function emailConfigured(): boolean {
 export async function notifyOwner({ subject, lines, replyTo }: SendArgs, to?: string | null) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
-  const recipient = process.env.EMAIL_TO || to;
+  /**
+   * The caller's address wins; EMAIL_TO is only the fallback.
+   *
+   * This was the other way round, and that quietly misdirected the one email
+   * where the recipient is not a preference but the whole point. Every caller
+   * already passes the right person — bookings and messages pass the café's
+   * contact address, and a password reset passes the address of the admin who
+   * asked for it — but EMAIL_TO overrode all of them, so setting it sent
+   * somebody's reset link to a shared inbox instead of to them.
+   *
+   * EMAIL_TO still earns its place: it catches the case where the café has not
+   * filled in a contact address yet, so notifications go somewhere rather than
+   * nowhere.
+   */
+  const recipient = to || process.env.EMAIL_TO;
 
   if (!key || !from || !recipient) return { sent: false, reason: "not configured" as const };
 
