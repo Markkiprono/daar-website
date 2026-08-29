@@ -181,13 +181,38 @@ function LinkFields({
   );
 }
 
-function Feedback({ state, fileError }: { state: PanelState; fileError: string | null }) {
+function Feedback({
+  state,
+  fileError,
+  onDismiss,
+}: {
+  state: PanelState;
+  fileError: string | null;
+  /** Clears the file error, re-enabling Save without choosing another file. */
+  onDismiss: () => void;
+}) {
   return (
     <>
       {fileError && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
-          {fileError}
-        </p>
+        <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+          <p>{fileError}</p>
+          {/* Save is disabled while this is showing, and nothing else clears
+              it — cancelling the picker fires no event, and the rejected file
+              has already been cleared off the input. Without a way out, one
+              photo the browser will not take locks the whole form and the
+              only escape is reloading and losing the edit.
+              A panel keeps whatever picture it already had unless a new
+              file is attached, so a rejected file must not block a wording
+              change.
+              MenuItemForm has carried this same button for the same reason. */}
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="mt-1 underline underline-offset-2"
+          >
+            Continue without changing the picture
+          </button>
+        </div>
       )}
       {state?.ok && (
         <p className="rounded-md bg-green-50 px-3 py-2 text-xs text-green-800">{state.message}</p>
@@ -340,7 +365,7 @@ function PanelEditor({
           Show this panel on the website
         </label>
 
-        <Feedback state={state} fileError={fileError} />
+        <Feedback state={state} fileError={fileError} onDismiss={() => setFileError(null)} />
 
         <Button type="submit" size="sm" disabled={pending || fileError !== null}>
           {pending ? "Saving…" : "Save panel"}
@@ -399,7 +424,7 @@ function AddPanelForm() {
 
       <LinkFields idPrefix="new-panel" />
 
-      <Feedback state={state} fileError={fileError} />
+      <Feedback state={state} fileError={fileError} onDismiss={() => setFileError(null)} />
 
       <Button type="submit" disabled={pending || fileError !== null}>
         {pending ? "Adding…" : "Add panel"}

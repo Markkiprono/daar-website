@@ -39,17 +39,40 @@ export type SettingsValues = {
 const MAX_LOGO_MB = 2;
 
 /** One logo slot: preview, replace, remove. */
-function LogoSlot({
-  slot,
-  label,
-  hint,
-  current,
-}: {
+type LogoSlotProps = {
   slot: "mark" | "wordmark";
   label: string;
   hint: string;
   current: string;
-}) {
+};
+
+/**
+ * Keyed on the stored logo, which is the whole of the fix.
+ *
+ * Removing a logo used to disable its own slot for the rest of the visit. The
+ * inner form keeps `preview`, `remove` and `error` — none of which the server
+ * knows about — while `current` arrives as a prop. Tick "Remove this logo",
+ * save, and the column is cleared; `current` comes back as the empty string,
+ * so the tickbox (rendered only when there is something to remove) vanishes
+ * while its state is still true. That leaves the file input disabled with no
+ * way to untick it.
+ *
+ * It failed more quietly than the photo slots did. With the checkbox gone the
+ * form posts neither `remove-mark` nor a file, so updateSettings skips the
+ * slot entirely and the bar still reports "Saved." — the logo stays missing,
+ * the upload button stays greyed out, and nothing says why. Every other field
+ * on the page keeps saving normally throughout, which makes it read as a
+ * broken upload button rather than a stuck form.
+ *
+ * A changed stored value now remounts the inner form and resets that state.
+ * There is no useActionState to hoist: the result lives in SettingsForm and
+ * already survives, so the key alone is enough.
+ */
+function LogoSlot(props: LogoSlotProps) {
+  return <LogoSlotFields key={props.current || "empty"} {...props} />;
+}
+
+function LogoSlotFields({ slot, label, hint, current }: LogoSlotProps) {
   const [preview, setPreview] = useState<string>(current);
   const [remove, setRemove] = useState(false);
   const [error, setError] = useState<string | null>(null);

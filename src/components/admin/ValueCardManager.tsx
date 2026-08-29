@@ -117,13 +117,37 @@ function PhotoField({
   );
 }
 
-function Feedback({ state, fileError }: { state: CardState; fileError: string | null }) {
+function Feedback({
+  state,
+  fileError,
+  onDismiss,
+}: {
+  state: CardState;
+  fileError: string | null;
+  /** Clears the file error, re-enabling Save without choosing another file. */
+  onDismiss: () => void;
+}) {
   return (
     <>
       {fileError && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
-          {fileError}
-        </p>
+        <div role="alert" className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-700">
+          <p>{fileError}</p>
+          {/* Save is disabled while this is showing, and nothing else clears
+              it — cancelling the picker fires no event, and the rejected file
+              has already been cleared off the input. Without a way out, one
+              photo the browser will not take locks the whole form and the
+              only escape is reloading and losing the edit.
+              A card can be saved without touching its picture, so a file
+              the browser refuses must not hold the words hostage.
+              MenuItemForm has carried this same button for the same reason. */}
+          <button
+            type="button"
+            onClick={onDismiss}
+            className="mt-1 underline underline-offset-2"
+          >
+            Continue without a photo
+          </button>
+        </div>
       )}
       {state?.ok && (
         <p className="rounded-md bg-green-50 px-3 py-2 text-xs text-green-800">{state.message}</p>
@@ -287,7 +311,7 @@ function CardEditor({
           Show this card on the website
         </label>
 
-        <Feedback state={state} fileError={fileError} />
+        <Feedback state={state} fileError={fileError} onDismiss={() => setFileError(null)} />
 
         <Button type="submit" size="sm" disabled={pending || fileError !== null}>
           {pending ? "Saving…" : "Save card"}
@@ -345,7 +369,7 @@ function AddCardForm() {
         <Input id="new-alt" name="alt" maxLength={160} placeholder="What the photo shows" />
       </div>
 
-      <Feedback state={state} fileError={fileError} />
+      <Feedback state={state} fileError={fileError} onDismiss={() => setFileError(null)} />
 
       <Button type="submit" disabled={pending || fileError !== null}>
         {pending ? "Adding…" : "Add card"}
