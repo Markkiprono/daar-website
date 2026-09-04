@@ -90,6 +90,40 @@ export const getGallery = cache(async () => {
 });
 
 /**
+ * The menu items the café ticked for the home-page band, in menu order.
+ *
+ * The deliberate half of what getGallery does by chance. Nothing ticked is
+ * the normal state and not a failure — the band falls back to the random
+ * draw, which is what it always did.
+ *
+ * Two filters the random draw applies are missing here on purpose. It skips
+ * the Chef's Special, because that dish already has a section of its own a
+ * little further down, and it skips nothing for availability, because the
+ * band is a look at what the kitchen makes rather than today's stock list.
+ * Neither of those should overrule somebody who went and ticked the box: a
+ * tick is a decision, and a decision the page quietly ignores is worse than
+ * no tick box at all.
+ *
+ * A photograph is still required. A tile with no picture in it is a grey
+ * rectangle drifting across the home page, which nobody meant to choose.
+ */
+export const getBandItems = cache(async () => {
+  return db.menuItem
+    .findMany({
+      where: {
+        isInBand: true,
+        imageUrl: { not: null },
+        category: { isVisible: true },
+      },
+      // name settles a tie the same way on every render — displayOrder is
+      // only unique within a category, and this reads across all of them.
+      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+      select: { id: true, name: true, imageUrl: true, imageAlt: true, blurDataUrl: true },
+    })
+    .catch(survive("getBandItems", [] as GalleryPlate[]));
+});
+
+/**
  * The photographs the café chose for the home-page band, in their order.
  *
  * Empty is the normal state and not a failure: with no rows the page falls
@@ -98,7 +132,14 @@ export const getGallery = cache(async () => {
  */
 export const getHomePhotos = cache(async () => {
   return db.homePhoto
-    .findMany({ orderBy: { displayOrder: "asc" } })
+    // createdAt breaks a tie the same way on every render, as it does for the
+    // panels and the value cards below. displayOrder alone is not unique —
+    // deleting from the middle of the band used to leave the next upload
+    // sharing a number with an existing photograph — and two rows with the
+    // same key come back in whatever order Postgres feels like. On a
+    // force-dynamic page that is a band that shuffles itself between one
+    // visitor and the next.
+    .findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] })
     .catch(survive("getHomePhotos", [] as never[]));
 });
 
@@ -169,7 +210,8 @@ export const getHours = cache(async () => {
 export const getStoryPhotos = cache(async () => {
 
   return db.storyPhoto
-    .findMany({ orderBy: { displayOrder: "asc" } })
+    // Tied displayOrders, same as the home band above — see the note there.
+    .findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] })
     .catch(survive("getStoryPhotos", [] as never[]));
 });
 

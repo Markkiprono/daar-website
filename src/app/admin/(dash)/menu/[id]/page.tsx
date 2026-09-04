@@ -58,6 +58,7 @@ export default async function EditMenuItemPage({ params }: { params: Promise<{ i
           categoryId: item.categoryId,
           isAvailable: item.isAvailable,
           isFeatured: item.isFeatured,
+          isInBand: item.isInBand,
           displayOrder: item.displayOrder,
           imageUrl: item.imageUrl,
           tagIds: item.tags.map((t) => t.tagId),

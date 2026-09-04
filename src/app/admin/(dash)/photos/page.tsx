@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PhotoSlot } from "@/components/admin/PhotoSlot";
 import { HeroVideoSlot } from "@/components/admin/HeroVideoSlot";
 import { PhotoGallery } from "@/components/admin/PhotoGallery";
+import { BandItemPicker } from "@/components/admin/BandItemPicker";
 import {
   addStoryPhoto,
   deleteStoryPhoto,
@@ -30,10 +31,29 @@ export default async function PhotosPage() {
   // Must precede every query — see the note in menu/page.tsx.
   await requireAdmin();
 
-  const [settings, gallery, band] = await Promise.all([
+  const [settings, gallery, band, menuPhotos] = await Promise.all([
     db.siteSettings.findUnique({ where: { id: "singleton" } }),
-    db.storyPhoto.findMany({ orderBy: { displayOrder: "asc" } }),
-    db.homePhoto.findMany({ orderBy: { displayOrder: "asc" } }),
+    // Both sorted the way the public pages sort them — createdAt settling any
+    // two photographs left sharing a displayOrder. The dashboard showing one
+    // order while the home page drifts past in another is not a difference
+    // anyone would think to report as a bug.
+    db.storyPhoto.findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] }),
+    db.homePhoto.findMany({ orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] }),
+    // Everything on the menu that has a photograph, in menu order, to be
+    // ticked into the band. Hidden categories are offered too, and labelled
+    // as hidden rather than dropped: an item can only be ticked here, so
+    // silently omitting one leaves no way to find out why it never appears.
+    db.menuItem.findMany({
+      where: { imageUrl: { not: null } },
+      orderBy: [{ category: { displayOrder: "asc" } }, { displayOrder: "asc" }, { name: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        imageUrl: true,
+        isInBand: true,
+        category: { select: { name: true, isVisible: true } },
+      },
+    }),
   ]);
 
   return (
@@ -95,21 +115,50 @@ export default async function PhotosPage() {
       </Section>
 
       <Section title="Home page — “What today looks like”">
-        <p className="-mt-2 mb-4 text-sm text-neutral-500">
-          The band of pictures that drifts across the home page. Left empty it fills itself with
-          menu photographs, picked afresh on every visit. Add one photo here and it shows exactly
-          what you choose instead, in this order.
+        <p className="-mt-2 mb-5 text-sm text-neutral-500">
+          The band of pictures that drifts across the home page. You fill it two ways and they add
+          up: upload your own photos below, tick menu items, or do both. Until you choose
+          something the band picks menu photographs on its own and falls back on the built-in
+          Daar pictures — the moment you upload one photo or tick one item, every built-in
+          picture is gone from the page.
         </p>
-        <PhotoGallery
-          photos={band.map((p) => ({ id: p.id, imageUrl: p.imageUrl, imageAlt: p.imageAlt }))}
-          addAction={addHomePhoto}
-          deleteAction={deleteHomePhoto}
-          moveAction={moveHomePhoto}
-          emptyMessage="No photos chosen — the band is picking menu photographs at random."
-          addTitle="Add a photo to the band"
-          submitLabel="Add to the band"
-          confirmMessage="Remove this photo from the band?"
-        />
+
+        <div className="space-y-7">
+          <div>
+            <h3 className="mb-1 text-sm font-medium">Your own photos</h3>
+            <p className="mb-4 text-xs text-neutral-500">
+              Uploaded straight into the band, shown in this order. Best for the room, the
+              packaging, the terrace — anything that is not a menu item.
+            </p>
+            <PhotoGallery
+              photos={band.map((p) => ({ id: p.id, imageUrl: p.imageUrl, imageAlt: p.imageAlt }))}
+              addAction={addHomePhoto}
+              deleteAction={deleteHomePhoto}
+              moveAction={moveHomePhoto}
+              emptyMessage="No photos uploaded to the band yet."
+              addTitle="Add a photo to the band"
+              submitLabel="Add to the band"
+              confirmMessage="Remove this photo from the band?"
+            />
+          </div>
+
+          <div className="border-t border-neutral-200 pt-6">
+            <h3 className="mb-1 text-sm font-medium">Menu items</h3>
+            <p className="mb-4 text-xs text-neutral-500">
+              Tick anything on the menu to put it in the band. It uses the item’s own photo, so
+              changing that photo under Menu changes it here too — no need to upload it twice.
+            </p>
+            <BandItemPicker
+              items={menuPhotos.map((i) => ({
+                id: i.id,
+                name: i.name,
+                imageUrl: i.imageUrl as string,
+                categoryName: i.category.isVisible ? i.category.name : `${i.category.name} (hidden)`,
+                isInBand: i.isInBand,
+              }))}
+            />
+          </div>
+        </div>
       </Section>
 
       <Section title="Story page">

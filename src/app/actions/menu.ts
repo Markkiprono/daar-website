@@ -19,6 +19,7 @@ const ItemSchema = z.object({
   categoryId: z.string().min(1, "Choose a category"),
   isAvailable: z.coerce.boolean().optional(),
   isFeatured: z.coerce.boolean().optional(),
+  isInBand: z.coerce.boolean().optional(),
   displayOrder: z.coerce.number().int().min(0).max(9999).optional(),
 });
 
@@ -77,6 +78,7 @@ function parse(formData: FormData) {
     categoryId: formData.get("categoryId"),
     isAvailable: formData.get("isAvailable") === "on",
     isFeatured: formData.get("isFeatured") === "on",
+    isInBand: formData.get("isInBand") === "on",
     displayOrder: formData.get("displayOrder") || 0,
   });
 }
@@ -182,6 +184,7 @@ export async function createMenuItem(_prev: ActionState, formData: FormData): Pr
           categoryId: d.categoryId,
           isAvailable: d.isAvailable ?? true,
           isFeatured: d.isFeatured ?? false,
+          isInBand: d.isInBand ?? false,
           displayOrder: d.displayOrder ?? 0,
           imageAlt: d.name,
           ...(image ?? {}),
@@ -241,6 +244,7 @@ export async function updateMenuItem(id: string, _prev: ActionState, formData: F
           categoryId: d.categoryId,
           isAvailable: d.isAvailable ?? false,
           isFeatured: d.isFeatured ?? false,
+          isInBand: d.isInBand ?? false,
           displayOrder: d.displayOrder ?? 0,
           // Only overwrite the image when a new one was actually uploaded.
           ...(image ?? {}),

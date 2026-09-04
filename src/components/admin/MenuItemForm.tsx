@@ -28,6 +28,7 @@ export type MenuItemFormValues = {
   categoryId?: string;
   isAvailable?: boolean;
   isFeatured?: boolean;
+  isInBand?: boolean;
   displayOrder?: number;
   imageUrl?: string | null;
   tagIds?: string[];
@@ -352,6 +353,17 @@ export function MenuItemForm({
             <p className="text-xs text-neutral-500">Shows on the home page. Only one at a time.</p>
           </div>
           <Switch id="isFeatured" name="isFeatured" defaultChecked={values?.isFeatured ?? false} />
+        </div>
+
+        <div className="flex items-center justify-between gap-4 border-t border-neutral-100 pt-4">
+          <div>
+            <Label htmlFor="isInBand">In the home page band</Label>
+            <p className="text-xs text-neutral-500">
+              Puts this item&apos;s photo in the drifting strip on the home page. Tick as many as
+              you like — all of them together are under Photos.
+            </p>
+          </div>
+          <Switch id="isInBand" name="isInBand" defaultChecked={values?.isInBand ?? false} />
         </div>
       </div>
 

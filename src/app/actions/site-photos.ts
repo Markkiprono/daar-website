@@ -174,13 +174,15 @@ export async function addStoryPhoto(_prev: PhotoState, formData: FormData): Prom
 
   try {
     const { url, blur } = await processSiteImage(file);
-    const count = await db.storyPhoto.count();
+    // One past the highest rather than the row count — see the note on
+    // addHomePhoto, which had the same collision after a deletion.
+    const top = await db.storyPhoto.aggregate({ _max: { displayOrder: true } });
     await db.storyPhoto.create({
       data: {
         imageUrl: url,
         blurDataUrl: blur,
         imageAlt: (formData.get("alt") as string | null)?.trim() || "A photo of Daar",
-        displayOrder: count,
+        displayOrder: (top._max.displayOrder ?? -1) + 1,
       },
     });
   } catch (e) {
@@ -205,7 +207,11 @@ export async function moveStoryPhoto(formData: FormData) {
   const id = String(formData.get("id"));
   const direction = String(formData.get("direction")) as "up" | "down";
 
-  const all = await db.storyPhoto.findMany({ orderBy: { displayOrder: "asc" } });
+  // Ordered exactly as the dashboard listed them, ties included, or the arrow
+  // swaps a different pair than the one the person clicked between.
+  const all = await db.storyPhoto.findMany({
+    orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+  });
   const index = all.findIndex((p) => p.id === id);
   if (index === -1) return;
   const swap = direction === "up" ? index - 1 : index + 1;
@@ -239,13 +245,19 @@ export async function addHomePhoto(_prev: PhotoState, formData: FormData): Promi
 
   try {
     const { url, blur } = await processSiteImage(file);
-    const count = await db.homePhoto.count();
+    // One past the highest, not the number of rows. Deleting from the middle
+    // of the band leaves a gap, after which the count is no longer the next
+    // free slot: three photographs, delete the second, and the count is 2 —
+    // which the third photograph is already using. The two then share a
+    // displayOrder and the band's order between them is whatever Postgres
+    // returns that second. Gaps are harmless; ties are not.
+    const top = await db.homePhoto.aggregate({ _max: { displayOrder: true } });
     await db.homePhoto.create({
       data: {
         imageUrl: url,
         blurDataUrl: blur,
         imageAlt: (formData.get("alt") as string | null)?.trim() || "A photo of Daar",
-        displayOrder: count,
+        displayOrder: (top._max.displayOrder ?? -1) + 1,
       },
     });
   } catch (e) {
@@ -270,7 +282,10 @@ export async function moveHomePhoto(formData: FormData) {
   const id = String(formData.get("id"));
   const direction = String(formData.get("direction")) as "up" | "down";
 
-  const all = await db.homePhoto.findMany({ orderBy: { displayOrder: "asc" } });
+  // Same as moveStoryPhoto: the order shown is the order swapped.
+  const all = await db.homePhoto.findMany({
+    orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }],
+  });
   const index = all.findIndex((p) => p.id === id);
   if (index === -1) return;
   const swap = direction === "up" ? index - 1 : index + 1;
@@ -334,4 +349,53 @@ export async function updateFavicon(_prev: PhotoState, formData: FormData): Prom
   revalidatePath("/", "layout");
   revalidatePath("/admin/photos");
   return { ok: true, message: "Favicon updated. Browsers may take a while to show it." };
+}
+
+// ------------------------------------------------------------
+//  Menu items in the band
+// ------------------------------------------------------------
+
+/**
+ * Which menu items appear in the drifting band, set in one go.
+ *
+ * The form carries the whole answer rather than one item's worth of it: an
+ * unticked checkbox submits nothing at all, so "everything off, then these
+ * back on" is the only reading of the posted data that cannot lose a tick.
+ * Toggling one row at a time would also mean a round trip per click, and
+ * choosing eight items is eight chances for one of them not to land.
+ *
+ * Both halves run in a transaction. Between the clear and the set the band
+ * has nothing ticked in it, and the home page renders on every request — a
+ * visitor landing in that gap would be served the random draw and the
+ * built-in photographs, which is precisely the thing the café is here to
+ * turn off.
+ */
+export async function updateBandItems(
+  _prev: PhotoState,
+  formData: FormData,
+): Promise<PhotoState> {
+  await assertAdmin();
+
+  const ids = formData.getAll("inBand").map(String).filter(Boolean);
+
+  await db.$transaction([
+    db.menuItem.updateMany({ where: { isInBand: true }, data: { isInBand: false } }),
+    ...(ids.length > 0
+      ? [db.menuItem.updateMany({ where: { id: { in: ids } }, data: { isInBand: true } })]
+      : []),
+  ]);
+
+  revalidatePublic();
+
+  if (ids.length === 0) {
+    return {
+      ok: true,
+      message:
+        "No menu items ticked. The band now shows your uploaded photos, or picks from the menu on its own if there are none.",
+    };
+  }
+  return {
+    ok: true,
+    message: `${ids.length} menu ${ids.length === 1 ? "item" : "items"} now showing in the band.`,
+  };
 }

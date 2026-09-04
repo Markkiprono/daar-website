@@ -63,6 +63,14 @@ model MenuItem {
 
   isAvailable  Boolean @default(true)
   isFeatured   Boolean @default(false) // drives "Chef's Special" on the home page
+  /// Ticked in the dashboard to put this item's photograph in the drifting
+  /// band on the home page ("What today looks like").
+  ///
+  /// Off by default, and the band falls back to a random draw while nothing
+  /// is ticked — so this changes nothing until somebody chooses. Ticking one
+  /// item takes the band over completely, which is the point: the café picks
+  /// what is on the counter today rather than the page guessing.
+  isInBand     Boolean @default(false)
   displayOrder Int     @default(0)
 
   tags           MenuItemTag[]
@@ -77,6 +85,7 @@ model MenuItem {
   @@index([categoryId, displayOrder])
   @@index([isAvailable])
   @@index([isFeatured])
+  @@index([isInBand])
 }
 
 enum TagKind {

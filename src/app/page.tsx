@@ -11,6 +11,7 @@ import {
   getSettings,
   getHours,
   getGallery,
+  getBandItems,
   getHomePhotos,
   getValueCards,
   getHomePanels,
@@ -38,26 +39,32 @@ import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [featured, settings, hours, gallery, chosen, valueCards, homePanels] = await Promise.all([
-    getFeatured(),
-    getSettings(),
-    getHours(),
-    getGallery(),
-    getHomePhotos(),
-    getValueCards(),
-    getHomePanels(),
-  ]);
+  const [featured, settings, hours, gallery, chosen, bandItems, valueCards, homePanels] =
+    await Promise.all([
+      getFeatured(),
+      getSettings(),
+      getHours(),
+      getGallery(),
+      getHomePhotos(),
+      getBandItems(),
+      getValueCards(),
+      getHomePanels(),
+    ]);
 
   /**
-   * The band: a few plates among the room, not a catalogue of the menu.
+   * The band, in the café's own hands.
    *
-   * getGallery draws five at random in the database, so it is a different
-   * handful every visit rather than the same photographs forever. That works
-   * because this page renders per request — see the note on force-dynamic
-   * above.
+   * Two ways in, and they add up rather than compete: photographs uploaded
+   * for the band, and menu items ticked for it. Either one on its own is a
+   * complete answer; together they are the strip.
    *
-   * Interleaved rather than concatenated: plates first then rooms would read
-   * as two separate strips joined end to end.
+   * These six were written into this file, which meant the one part of the
+   * home page that is supposed to show what the counter looks like *today*
+   * could only be changed by a deploy. They are now nothing but the picture
+   * of last resort — the state before anyone has chosen, kept so a café that
+   * has not touched the dashboard yet still has a home page. The moment a
+   * photograph is uploaded or a single item is ticked, every one of them is
+   * gone from the page.
    */
   const ROOM: Frame[] = [
     { src: "/brand/interior-02.jpg", alt: "The room at Daar" },
@@ -68,32 +75,57 @@ export default async function HomePage() {
     { src: "/brand/patience-plates.jpg", alt: "Plates reading ‘Patience tastes better’" },
   ];
 
+  /* Photographs uploaded for the band, in the order she arranged them. */
+  const uploaded: Frame[] = chosen.map((p) => ({
+    src: p.imageUrl,
+    alt: p.imageAlt ?? "A photo of Daar",
+    blur: p.blurDataUrl,
+  }));
+
+  /* Menu items ticked for the band. The photograph is the item's own, so
+     replacing it on the Menu page replaces it here too — which is the whole
+     reason to tick an item rather than upload the same picture twice. */
+  const ticked: Frame[] = bandItems.flatMap((item) =>
+    item.imageUrl ? [{ src: item.imageUrl, alt: item.imageAlt ?? item.name, blur: item.blurDataUrl }] : [],
+  );
+
+  /* The self-filling version: a few plates drawn at random among the room.
+     getGallery redraws on every request — see the note on force-dynamic
+     above — so this is a different handful each visit rather than the same
+     photographs forever. */
   const plates: Frame[] = gallery.map((g) => ({
     src: g.imageUrl,
     alt: g.imageAlt ?? g.name,
     blur: g.blurDataUrl,
   }));
 
-  const mixed: Frame[] = [];
-  for (let i = 0; i < Math.max(plates.length, ROOM.length); i += 1) {
-    if (plates[i]) mixed.push(plates[i]);
-    if (ROOM[i]) mixed.push(ROOM[i]);
-  }
+  /* Each source laid end to end, NOT shuffled one for one.
+   *
+   * The alternating split below is what actually mixes them, and it takes
+   * every second frame — so interleaving here too cancels it out exactly and
+   * hands back the thing it was meant to prevent: with four uploads and four
+   * ticked items you got a row of four photographs above a row of four
+   * plates, two separate strips stacked. Concatenated, the same split deals
+   * the two sources alternately into both rows.
+   *
+   * This is why the band has been reading as one row of menu photographs
+   * above one row of the built-in pictures.
+   *
+   * What she chose wins outright — a band half her picks and half a random
+   * draw is neither. Nothing chosen leaves the self-filling version, which
+   * is all the built-in photographs are still for. */
+  const picked = [...uploaded, ...ticked];
+  const strip: Frame[] = picked.length > 0 ? picked : [...plates, ...ROOM];
 
-  /* Chosen photographs win outright — a band that is half the café's picks
-     and half a random draw is neither. One row in the dashboard is enough to
-     take the whole strip over; none leaves the self-filling version above. */
-  const strip: Frame[] =
-    chosen.length > 0
-      ? chosen.map((p) => ({
-          src: p.imageUrl,
-          alt: p.imageAlt ?? "A photo of Daar",
-          blur: p.blurDataUrl,
-        }))
-      : mixed;
-
-  const galleryTop = strip.filter((_, i) => i % 2 === 0);
-  const galleryBottom = strip.filter((_, i) => i % 2 === 1);
+  /* Alternating, so the two bands read as one strip cut in half rather than
+     as the first half above the second. Below two photographs the split
+     leaves the lower band empty and it does not render at all — a café that
+     takes the dashboard at its word and adds a single picture got half a
+     section for it. One photograph feeds both bands instead; the Marquee
+     repeats whatever it is given until it is wider than the screen, so a
+     short strip is already its problem to solve rather than this one. */
+  const galleryTop = strip.length < 2 ? strip : strip.filter((_, i) => i % 2 === 0);
+  const galleryBottom = strip.length < 2 ? strip : strip.filter((_, i) => i % 2 === 1);
 
   /**
    * Every backdrop the dashboard can set, resolved once.
@@ -286,8 +318,16 @@ export default async function HomePage() {
 
       {/* ---------- THE COUNTER ----------
           Real plates, drifting past. Menu photographs first, the room behind
-          them, so it reads as this kitchen rather than a stock strip. */}
-      {gallery.length + 4 > 4 && (
+          them, so it reads as this kitchen rather than a stock strip.
+
+          Gated on what is about to be drawn, not on where it came from. This
+          asked whether the random draw of menu photographs found anything,
+          which is the one question that does not decide it: the café's own
+          chosen photographs override that draw entirely a few lines up, so a
+          menu with no pictures on it yet hid the section underneath a band
+          that had been filled in by hand. Uploading photographs and watching
+          the section vanish is the worst way to learn that. */}
+      {strip.length > 0 && (
         <section className="overflow-hidden bg-daar-ink py-24 text-daar-cream">
           <Reveal className="mx-auto mb-12 max-w-[1240px] px-5">
             <p className="font-[family-name:var(--font-label)] text-xs uppercase tracking-[0.18em] text-daar-tan">
