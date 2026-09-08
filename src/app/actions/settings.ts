@@ -8,6 +8,13 @@ import { socialUrl } from "@/lib/socials";
 import { getStorage, buildKey } from "@/lib/storage";
 import { processLogo } from "@/lib/logo-upload";
 import { mapEmbedSrc, isMapEmbed, MAP_EMBED_HELP } from "@/lib/map-embed";
+import {
+  sendTestAlert,
+  alertRecipients,
+  explainError,
+  numbersAreUsable,
+} from "@/lib/whatsapp";
+import { cafeNow } from "@/lib/time";
 
 export type SettingsState = { ok?: true; error?: string } | undefined;
 
@@ -39,6 +46,25 @@ const SettingsSchema = z.object({
   whatsapp: z.string().trim().max(30).optional().or(z.literal("")),
   email: z.string().trim().max(120).optional().or(z.literal("")),
   reservationsEmail: z.string().trim().max(120).optional().or(z.literal("")),
+  /**
+   * Who gets the WhatsApp alert. Validated rather than trusted, because a
+   * mistyped number fails silently and invisibly: Meta accepts any well-formed
+   * number and simply never delivers to one that has no WhatsApp account. The
+   * café would believe alerts were on and only find out from an empty table.
+   */
+  reservationsWhatsApp: z
+    .string()
+    .trim()
+    .max(200)
+    // Shares numbersAreUsable with the sender, so the form cannot accept a
+    // number the sender would then quietly drop — or reject one it would have
+    // been happy to use.
+    .refine(
+      (v) => v === "" || numbersAreUsable(v),
+      "Each WhatsApp number needs its country code, e.g. 254727117355",
+    )
+    .optional()
+    .or(z.literal("")),
   mapEmbedUrl: MapEmbed.optional().or(z.literal("")),
 
   // Structured-data only. Bounds are the real limits of each coordinate, so a
@@ -91,6 +117,7 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
     whatsapp: formData.get("whatsapp") ?? "",
     email: formData.get("email") ?? "",
     reservationsEmail: formData.get("reservationsEmail") ?? "",
+    reservationsWhatsApp: formData.get("reservationsWhatsApp") ?? "",
     mapEmbedUrl: formData.get("mapEmbedUrl") ?? "",
     latitude: formData.get("latitude") ?? "",
     longitude: formData.get("longitude") ?? "",
@@ -160,6 +187,7 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
         whatsapp: d.whatsapp || null,
         email: d.email || null,
         reservationsEmail: d.reservationsEmail || null,
+        reservationsWhatsApp: d.reservationsWhatsApp || null,
         mapEmbedUrl: d.mapEmbedUrl || null,
         // Stored as text: schema.org wants the string form, and this avoids
         // a float silently rounding the last decimal off a map pin.
@@ -205,6 +233,65 @@ export async function updateSettings(_prev: SettingsState, formData: FormData): 
   revalidatePath("/admin/settings");
 
   return { ok: true };
+}
+
+
+// ------------------------------------------------------------
+//  WhatsApp test alert
+// ------------------------------------------------------------
+
+export type TestAlertState = { ok: boolean; message: string } | undefined;
+
+/**
+ * Prove the WhatsApp setup works, from the dashboard, without faking a booking.
+ *
+ * Takes the number typed into the field rather than the saved one. Setting
+ * this up means getting a token, a template and an opt-in all right at once,
+ * and each of them fails silently; being able to press a button and find out
+ * before saving is the difference between ten minutes and an afternoon.
+ *
+ * Capped at five recipients. The cap is Meta's own test-mode limit, and it
+ * also means this cannot be turned into a way to send WhatsApp messages to a
+ * list of strangers by whoever is sitting at the dashboard.
+ */
+export async function testWhatsAppAlert(to: string): Promise<TestAlertState> {
+  await assertAdmin();
+
+  const recipients = alertRecipients(to);
+  if (recipients.length === 0)
+    return {
+      ok: false,
+      message:
+        "No usable number. Country code first and no plus sign — 254727117355.",
+    };
+  if (recipients.length > 5)
+    return { ok: false, message: "Five numbers at most for a test." };
+
+  const now = cafeNow();
+  const result = await sendTestAlert(to, `${now.date} at ${now.time}`);
+
+  if (result.reason === "not configured")
+    return {
+      ok: false,
+      message:
+        "WhatsApp isn't set up on the server yet — WHATSAPP_TOKEN and WHATSAPP_PHONE_NUMBER_ID are unset. See DEPLOY.md.",
+    };
+
+  const plural = (n: number) => (n === 1 ? "number" : "numbers");
+
+  if (result.failed === 0)
+    return {
+      ok: true,
+      message: `Sent to ${result.sent} ${plural(result.sent)}. Check the phone now — it should arrive within a few seconds.`,
+    };
+
+  const why = explainError(result.errors[0] ?? "");
+  if (result.sent === 0) return { ok: false, message: why };
+
+  return {
+    ok: false,
+    message: `Sent to ${result.sent} of ${recipients.length}. The rest failed: ${why}`,
+  };
 }
 
 const HoursSchema = z.object({

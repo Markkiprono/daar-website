@@ -258,3 +258,110 @@ container over Docker's internal network. Keep it that way.
 | Restart | `docker compose restart app` |
 | Shell | `docker compose exec app sh` |
 | Postgres | `docker compose exec db psql -U daar daar` |
+
+---
+
+## WhatsApp booking alerts
+
+Bookings email the café already. This adds a WhatsApp message to a staff phone
+the moment a table is requested, because the inbox gets read between services
+and the phone gets read during one.
+
+Entirely optional. With none of it configured the site behaves exactly as
+before — the code no-ops, and a guest can never see a booking fail because
+Meta was down or a token expired.
+
+### 1. A number you are willing to lose
+
+Meta consumes the number you register. **A number on the Cloud API can no
+longer be used in the normal WhatsApp or WhatsApp Business app on a handset.**
+
+Do not register the number printed on the website — guests message that one,
+and registering it would take it away from whoever answers them. Use a
+separate SIM that does nothing but send alerts.
+
+This is the sender only. Staff receive alerts on their own ordinary WhatsApp,
+which is untouched.
+
+### 2. Meta setup
+
+1. developers.facebook.com → create an app → **Business** type.
+2. Add the **WhatsApp** product. Note the **Phone number ID** on the API Setup
+   page — that is `WHATSAPP_PHONE_NUMBER_ID`. It is an id, not a phone number.
+3. Register the alert SIM under **Add phone number** and verify it by SMS.
+4. Business Settings → Users → **System Users** → add one → **Generate token**
+   with `whatsapp_business_messaging` and `whatsapp_business_management`, and
+   set it to never expire. That is `WHATSAPP_TOKEN`.
+
+   The token the API Setup page hands you first expires in 24 hours. Using it
+   means alerts work in testing, then stop the next day for no visible reason.
+
+### 3. The message template
+
+Business-initiated messages cannot be free text. Create this under
+**WhatsApp Manager → Message templates**:
+
+- **Name:** `daar_booking`
+- **Category:** Utility — *not* Marketing. Marketing costs more, is throttled,
+  and can be muted by the recipient, which defeats the point.
+- **Language:** English (`en`)
+- **Body:**
+
+  ```
+  Daar — booking {{1}}
+
+  Guest: {{2}}
+  Party: {{3}}
+  When: {{4}}
+  Phone: {{5}}
+  Ref: {{6}}
+
+  Open the dashboard to confirm.
+  ```
+
+Approval is usually well under an hour. The six parameters are filled in that
+order by `src/lib/whatsapp.ts`; `{{1}}` is `REQUEST` for a new booking and
+`CHANGED` when a guest amends one. Changing the wording is free, but **adding
+or removing a `{{n}}` means changing that file too**, or every send fails with
+a 132000-series parameter-count error.
+
+### 4. Who gets alerted
+
+Set in the dashboard, **Settings → Contact → WhatsApp alerts for bookings**.
+Country code first, no plus, commas between several:
+
+```
+254727117355, 254712345678
+```
+
+Put more than one person on it. A single recipient is how bookings got missed
+in the first place.
+
+`WHATSAPP_ALERT_TO` in the environment is only a fallback for when that field
+is empty, so the alerts keep working before anyone has visited the dashboard.
+
+### 5. Recipients must opt in once
+
+Meta will not deliver to a number that has never accepted messages from the
+business. Each member of staff sends any message — "hi" is enough — to the
+alert number once, from the phone they will receive on. After that they are
+opted in permanently.
+
+While the app is in Meta's **test** mode you must also add each staff number
+under API Setup → recipients, up to five. Five is often enough for a café, and
+test mode is free.
+
+### 6. Check it
+
+Make a booking on `/reserve`. Within a few seconds the alert should arrive.
+
+If nothing does, the server log has the reason — every failure is logged with
+Meta's own error body:
+
+```bash
+docker compose logs --tail=50 web | grep whatsapp
+```
+
+The usual causes, in the order they actually happen: the template is still
+pending approval; the token was the 24-hour one; the recipient never sent that
+first message; the number is missing its country code.

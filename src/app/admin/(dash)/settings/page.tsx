@@ -90,6 +90,7 @@ export default async function AdminSettingsPage() {
           whatsapp: settings?.whatsapp ?? "",
           email: settings?.email ?? "",
           reservationsEmail: settings?.reservationsEmail ?? "",
+          reservationsWhatsApp: settings?.reservationsWhatsApp ?? "",
           mapEmbedUrl: settings?.mapEmbedUrl ?? "",
           latitude: settings?.latitude ?? "",
           longitude: settings?.longitude ?? "",
