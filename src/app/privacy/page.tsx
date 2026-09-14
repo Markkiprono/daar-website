@@ -32,9 +32,11 @@ export const metadata: Metadata = {
  * Privacy notice.
  *
  * Everything here is written against what the code actually does, not a
- * template: the site sets no visitor cookies, stores no IP addresses and runs
- * no third-party analytics, so it can say so plainly. If the data the forms
- * collect ever changes, this page has to change with it.
+ * template: the site's own code sets no visitor cookies, stores no IP addresses
+ * and runs no third-party analytics. The one outside tag is Google Ads
+ * (src/components/site/GoogleTag.tsx), and it is named below. If the data the
+ * forms collect ever changes, or a tag is added or removed, this page has to
+ * change with it.
  */
 function H({ children }: { children: React.ReactNode }) {
   return (
@@ -50,7 +52,7 @@ export default async function PrivacyPage() {
   const contactPhone = settings?.phone;
   const address = settings?.addressLine ?? SITE.city;
 
-  const updated = new Date("2026-08-03").toLocaleDateString("en-GB", {
+  const updated = new Date("2026-09-14").toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -124,9 +126,9 @@ export default async function PrivacyPage() {
 
           <H>What we do not collect</H>
           <p>
-            Worth stating plainly, because most sites cannot: this website sets no cookies on your
-            device, stores no IP addresses, and runs no third-party analytics or advertising
-            trackers. There is no Google Analytics, no advertising pixel and no fingerprinting.
+            Our own code sets no cookies on your device, stores no IP addresses and does no
+            fingerprinting, and there is no Google Analytics. The one exception is Google&apos;s
+            advertising tag, explained under &ldquo;Who else sees it&rdquo; below.
           </p>
           <p>
             We do count how often a menu item is viewed, so we know what to bake more of. That
@@ -139,6 +141,20 @@ export default async function PrivacyPage() {
             <li>
               <strong>Our hosting provider,</strong> which stores the site and its database on our
               behalf.
+            </li>
+            <li>
+              <strong>Google Ads.</strong> Our pages load Google&apos;s advertising tag, so we can
+              see whether our ads bring people here and show them to people who have visited
+              before. When a page loads, Google receives your IP address, the page you are on and
+              details of your browser, and may set its own cookies, under{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                Google&apos;s privacy policy
+              </a>
+              . You can turn off personalised ads at{" "}
+              <a href="https://myadcenter.google.com" target="_blank" rel="noopener noreferrer">
+                myadcenter.google.com
+              </a>
+              .
             </li>
             <li>
               <strong>Google Maps.</strong> The Visit page embeds a Google map. When it loads,
