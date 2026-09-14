@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bodoni_Moda, Jost, Montserrat } from "next/font/google";
 import { SITE } from "@/lib/config";
 import { ServiceWorker } from "@/components/site/ServiceWorker";
+import { GoogleTag } from "@/components/site/GoogleTag";
 import { getSettings } from "@/lib/menu";
 import { isVideoUrl } from "@/lib/media";
 import "./globals.css";
@@ -146,6 +147,7 @@ export default function RootLayout({
       <body className="flex min-h-full flex-col">
         {children}
         <ServiceWorker />
+        <GoogleTag />
       </body>
     </html>
   );

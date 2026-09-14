@@ -124,10 +124,14 @@ Changing currency is one variable.
 ### Analytics
 
 Per-item view counts, **aggregate only** — no cookies, no visitor
-identity, no third-party tracker. Raw `MenuItemView` events roll up
-nightly into `DailyItemStat` and are then pruned, so the table cannot
-grow unbounded on a small VPS. This also keeps the site clear of
-consent-banner obligations.
+identity. Raw `MenuItemView` events roll up nightly into
+`DailyItemStat` and are then pruned, so the table cannot grow
+unbounded on a small VPS.
+
+The one third-party tag is **Google Ads** (`src/components/site/GoogleTag.tsx`):
+public pages only, production builds only. It lets Google set cookies,
+so the privacy notice names it — change `src/app/privacy/page.tsx` if
+it is removed or another tag joins it.
 
 ---
 
