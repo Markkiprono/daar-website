@@ -148,7 +148,28 @@ export function AdminMenuList({ categories }: { categories: AdminCategory[] }) {
                       ? "Clear the search to change the order"
                       : undefined;
                     return (
-                      <div className="flex shrink-0 flex-col items-center">
+                      <div className="flex w-14 shrink-0 flex-col items-center">
+                        {/* Spelt out rather than drawn. A double-headed arrow
+                            is the usual icon for this and is routinely read as
+                            "up a lot" rather than "all the way", and the
+                            people arranging this menu should not have to
+                            guess. */}
+                        <form action={moveMenuItem} className="w-full">
+                          <input type="hidden" name="id" value={item.id} />
+                          <input type="hidden" name="direction" value="top" />
+                          <Button
+                            type="submit"
+                            size="xs"
+                            variant="ghost"
+                            disabled={isFiltering || first}
+                            title={why}
+                            className="w-full text-[10px] text-neutral-500"
+                            aria-label={`Move ${item.name} to the top of ${category.name}`}
+                          >
+                            Top
+                          </Button>
+                        </form>
+
                         <form action={moveMenuItem}>
                           <input type="hidden" name="id" value={item.id} />
                           <input type="hidden" name="direction" value="up" />
@@ -183,6 +204,22 @@ export function AdminMenuList({ categories }: { categories: AdminCategory[] }) {
                             aria-label={`Move ${item.name} down, out of position ${place ? place.index + 1 : "?"}`}
                           >
                             ↓
+                          </Button>
+                        </form>
+
+                        <form action={moveMenuItem} className="w-full">
+                          <input type="hidden" name="id" value={item.id} />
+                          <input type="hidden" name="direction" value="bottom" />
+                          <Button
+                            type="submit"
+                            size="xs"
+                            variant="ghost"
+                            disabled={isFiltering || last}
+                            title={why}
+                            className="w-full text-[10px] text-neutral-500"
+                            aria-label={`Move ${item.name} to the bottom of ${category.name}`}
+                          >
+                            Bottom
                           </Button>
                         </form>
                       </div>

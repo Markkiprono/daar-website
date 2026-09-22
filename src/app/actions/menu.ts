@@ -311,7 +311,12 @@ export async function deleteMenuItem(formData: FormData) {
 
 /** One-tap sold-out toggle — the owner's most-used control. */
 /**
- * Move an item one place up or down inside its own category.
+ * Move an item inside its own category: one place up or down, or straight to
+ * the top or bottom.
+ *
+ * Top and bottom exist because a real category runs to twenty-odd items, and
+ * walking the cheapest pastry up from the bottom one click at a time is the
+ * kind of chore that gets abandoned halfway.
  *
  * Ordering the menu by typing numbers into a "Sort order" box asks the person
  * arranging it to hold the whole category in their head and to know that a
@@ -325,7 +330,11 @@ export async function deleteMenuItem(formData: FormData) {
 export async function moveMenuItem(formData: FormData) {
   await assertAdmin();
   const id = String(formData.get("id"));
-  const direction = String(formData.get("direction")) as "up" | "down";
+  const direction = String(formData.get("direction"));
+  // Checked rather than cast. It arrives from a form, and an unrecognised
+  // value used to fall through to "down" — a typo in the markup would have
+  // quietly moved items the wrong way instead of doing nothing.
+  if (!["up", "down", "top", "bottom"].includes(direction)) return;
 
   const item = await db.menuItem.findUnique({ where: { id }, select: { categoryId: true } });
   if (!item) return;
@@ -343,11 +352,32 @@ export async function moveMenuItem(formData: FormData) {
   const index = siblings.findIndex((s) => s.id === id);
   if (index === -1) return;
 
-  const swapWith = direction === "up" ? index - 1 : index + 1;
-  if (swapWith < 0 || swapWith >= siblings.length) return;
+  const target =
+    direction === "up"
+      ? index - 1
+      : direction === "down"
+        ? index + 1
+        : direction === "top"
+          ? 0
+          : siblings.length - 1;
+  if (target === index || target < 0 || target >= siblings.length) return;
 
+  /**
+   * Lift the item out and drop it back in at the target, rather than trading
+   * places with whatever sits there.
+   *
+   * It matters for "to the top": exchanging with the first item would fling
+   * that one down to wherever this one came from, so sending the cheapest
+   * pastry to the top of a long category would silently banish the item that
+   * used to lead it. Moving shifts everything between along by one instead,
+   * which is what a person means by "put this first".
+   *
+   * For a one-step move the two are the same thing, so all four directions go
+   * through this and there is no second path to keep correct.
+   */
   const reordered = [...siblings];
-  [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+  const [moved] = reordered.splice(index, 1);
+  reordered.splice(target, 0, moved!);
 
   /**
    * Rewrite the whole run rather than exchanging two numbers.
