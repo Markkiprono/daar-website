@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { toggleAvailability, setFeatured, deleteMenuItem } from "@/app/actions/menu";
+import { toggleAvailability, setFeatured, deleteMenuItem, moveMenuItem } from "@/app/actions/menu";
 import { formatPrice } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,32 @@ export function AdminMenuList({ categories }: { categories: AdminCategory[] }) {
   const total = filtered.reduce((n, c) => n + c.items.length, 0);
   const grandTotal = categories.reduce((n, c) => n + c.items.length, 0);
 
+  /**
+   * Each item's real place in its category, taken from the full list rather
+   * than the filtered one.
+   *
+   * A search narrows what is on screen, and counting the rows that survived it
+   * would tell somebody their croissant is 2nd when the menu has it 7th. The
+   * number has to mean the same thing as the menu, or it is worse than no
+   * number at all.
+   */
+  const places = useMemo(() => {
+    const map = new Map<string, { index: number; total: number }>();
+    for (const c of categories) {
+      c.items.forEach((item, index) => map.set(item.id, { index, total: c.items.length }));
+    }
+    return map;
+  }, [categories]);
+
+  /**
+   * Reordering is switched off while a search or the sold-out filter is on.
+   *
+   * The arrows swap an item with its true neighbour, which during a search is
+   * very often a row that is hidden. The move would be correct and look like
+   * nothing happened — or worse, like the wrong row moved.
+   */
+  const isFiltering = query.trim() !== "" || onlySoldOut;
+
   return (
     <div className="space-y-5">
       <div className="sticky top-[104px] z-30 -mx-4 space-y-3 bg-neutral-50/95 px-4 py-3 backdrop-blur">
@@ -76,6 +102,25 @@ export function AdminMenuList({ categories }: { categories: AdminCategory[] }) {
             {query || onlySoldOut ? `${total} of ${grandTotal}` : `${grandTotal} items`}
           </span>
         </div>
+
+        {/* Said out loud, because a row of greyed-out arrows with no
+            explanation reads as broken rather than as switched off. */}
+        {isFiltering && (
+          <p className="text-xs text-neutral-500">
+            The arrows are off while you are searching —{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                setOnlySoldOut(false);
+              }}
+              className="underline"
+            >
+              clear the search
+            </button>{" "}
+            to change the order.
+          </p>
+        )}
       </div>
 
       {total === 0 ? (
@@ -95,6 +140,55 @@ export function AdminMenuList({ categories }: { categories: AdminCategory[] }) {
                   key={item.id}
                   className="flex items-center gap-3 rounded-lg border border-neutral-200 bg-white p-3"
                 >
+                  {(() => {
+                    const place = places.get(item.id);
+                    const first = place ? place.index === 0 : true;
+                    const last = place ? place.index === place.total - 1 : true;
+                    const why = isFiltering
+                      ? "Clear the search to change the order"
+                      : undefined;
+                    return (
+                      <div className="flex shrink-0 flex-col items-center">
+                        <form action={moveMenuItem}>
+                          <input type="hidden" name="id" value={item.id} />
+                          <input type="hidden" name="direction" value="up" />
+                          <Button
+                            type="submit"
+                            size="icon-xs"
+                            variant="ghost"
+                            disabled={isFiltering || first}
+                            title={why}
+                            aria-label={`Move ${item.name} up, out of position ${place ? place.index + 1 : "?"}`}
+                          >
+                            ↑
+                          </Button>
+                        </form>
+
+                        {/* The position, so the order is legible without
+                            opening anything — this is the whole point of the
+                            column, and why it sits between the arrows. */}
+                        <span className="text-xs tabular-nums text-neutral-500">
+                          {place ? place.index + 1 : "–"}
+                        </span>
+
+                        <form action={moveMenuItem}>
+                          <input type="hidden" name="id" value={item.id} />
+                          <input type="hidden" name="direction" value="down" />
+                          <Button
+                            type="submit"
+                            size="icon-xs"
+                            variant="ghost"
+                            disabled={isFiltering || last}
+                            title={why}
+                            aria-label={`Move ${item.name} down, out of position ${place ? place.index + 1 : "?"}`}
+                          >
+                            ↓
+                          </Button>
+                        </form>
+                      </div>
+                    );
+                  })()}
+
                   <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded bg-neutral-100">
                     {item.imageUrl ? (
                       <Image

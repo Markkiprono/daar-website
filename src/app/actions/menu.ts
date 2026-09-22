@@ -175,6 +175,26 @@ export async function createMenuItem(_prev: ActionState, formData: FormData): Pr
       if (d.isFeatured) {
         await tx.menuItem.updateMany({ where: { isFeatured: true }, data: { isFeatured: false } });
       }
+      /**
+       * A new item joins the end of its category, not the top.
+       *
+       * Everything defaults to 0 and 0 sorts first, so once a category has
+       * been put in order every item added afterwards would jump above the
+       * whole arrangement — and the person who had just spent ten minutes on
+       * it would have to fix the order again each time they added a pastry.
+       *
+       * A number typed into Sort order still wins, for anyone who wants one.
+       */
+      const displayOrder =
+        d.displayOrder && d.displayOrder > 0
+          ? d.displayOrder
+          : ((
+              await tx.menuItem.aggregate({
+                where: { categoryId: d.categoryId },
+                _max: { displayOrder: true },
+              })
+            )._max.displayOrder ?? 0) + 1;
+
       return tx.menuItem.create({
         data: {
           name: d.name,
@@ -185,7 +205,7 @@ export async function createMenuItem(_prev: ActionState, formData: FormData): Pr
           isAvailable: d.isAvailable ?? true,
           isFeatured: d.isFeatured ?? false,
           isInBand: d.isInBand ?? false,
-          displayOrder: d.displayOrder ?? 0,
+          displayOrder,
           imageAlt: d.name,
           ...(image ?? {}),
         },
@@ -290,6 +310,66 @@ export async function deleteMenuItem(formData: FormData) {
 }
 
 /** One-tap sold-out toggle — the owner's most-used control. */
+/**
+ * Move an item one place up or down inside its own category.
+ *
+ * Ordering the menu by typing numbers into a "Sort order" box asks the person
+ * arranging it to hold the whole category in their head and to know that a
+ * lower number wins. The café asked for the thing they already use on the
+ * Categories page instead: see the order, move a row.
+ *
+ * Scoped to one category deliberately. An item belongs to exactly one, and the
+ * menu orders within each, so a swap across a boundary would move an item
+ * somewhere no visitor could see it.
+ */
+export async function moveMenuItem(formData: FormData) {
+  await assertAdmin();
+  const id = String(formData.get("id"));
+  const direction = String(formData.get("direction")) as "up" | "down";
+
+  const item = await db.menuItem.findUnique({ where: { id }, select: { categoryId: true } });
+  if (!item) return;
+
+  // Read the siblings in exactly the order the menu renders them, so "up"
+  // means what the person clicking it is looking at. Ordering by displayOrder
+  // alone would leave items that share a number in one arbitrary order here
+  // and a different one on the site, and the arrow would appear to do nothing.
+  const siblings = await db.menuItem.findMany({
+    where: { categoryId: item.categoryId },
+    orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+    select: { id: true },
+  });
+
+  const index = siblings.findIndex((s) => s.id === id);
+  if (index === -1) return;
+
+  const swapWith = direction === "up" ? index - 1 : index + 1;
+  if (swapWith < 0 || swapWith >= siblings.length) return;
+
+  const reordered = [...siblings];
+  [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+
+  /**
+   * Rewrite the whole run rather than exchanging two numbers.
+   *
+   * Every item ships at 0, so in a category nobody has ordered yet, swapping
+   * two displayOrders exchanges 0 for 0 — the first click on every arrow
+   * would do nothing at all, which reads as a broken button. Numbering the
+   * sequence outright also heals the duplicates and gaps left behind by
+   * hand-typed numbers.
+   */
+  await db.$transaction(
+    reordered.map((s, i) =>
+      db.menuItem.update({ where: { id: s.id }, data: { displayOrder: i + 1 } }),
+    ),
+  );
+
+  revalidatePath("/admin/menu");
+  revalidatePath("/menu");
+  revalidatePath("/menu/[slug]", "page");
+  revalidatePath("/");
+}
+
 export async function toggleAvailability(formData: FormData) {
   await assertAdmin();
   const id = String(formData.get("id"));
