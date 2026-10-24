@@ -390,6 +390,13 @@ model SiteSettings {
   /// general enquiries. Blank means they go to `email` like everything else.
   reservationsEmail String?
 
+  /// Who gets a WhatsApp alert when a booking lands, comma-separated and in
+  /// international form: "254727117355,254712345678". Not shown on the site
+  /// and unrelated to `whatsapp` above, which is the public "message us"
+  /// link — one is where guests write to the café, this is where the café
+  /// gets told. Blank falls back to WHATSAPP_ALERT_TO in the environment.
+  reservationsWhatsApp String?
+
   /// { instagram, tiktok, facebook, ... }
   socials Json @default("{}")
 

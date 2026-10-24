@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { mapEmbedSrc, isMapEmbed, MAP_EMBED_HELP } from "@/lib/map-embed";
+import { WhatsAppAlertField } from "@/components/admin/WhatsAppAlertField";
 
 export type SettingsValues = {
   addressLine: string;
@@ -15,6 +16,7 @@ export type SettingsValues = {
   whatsapp: string;
   email: string;
   reservationsEmail: string;
+  reservationsWhatsApp: string;
   mapEmbedUrl: string;
   latitude: string;
   longitude: string;
@@ -239,6 +241,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
             they go to the address above with everything else. Not shown on the site.
           </p>
         </div>
+        <WhatsAppAlertField defaultValue={values.reservationsWhatsApp} />
       </Section>
 
       <Section

@@ -11,6 +11,7 @@ import {
   LEAD_MINUTES,
 } from "@/lib/time";
 import { notifyOwner } from "@/lib/email";
+import { notifyOwnerWhatsApp, type BookingAlert } from "@/lib/whatsapp";
 import { ReservationStatus } from "@/generated/prisma/client";
 
 export type ReservationState =
@@ -47,6 +48,31 @@ const ReservationSchema = z.object({
 /** Short human-friendly reference the guest can quote on the phone. */
 function reference(id: string) {
   return `DAAR-${id.slice(-6).toUpperCase()}`;
+}
+
+/**
+ * The same booking, shaped for a WhatsApp template.
+ *
+ * Meta's template takes six ordered parameters and nothing else — there is no
+ * room for the occasion or the guest's notes, and no way to add one without
+ * submitting the template for approval again. So this is deliberately the
+ * bare minimum a member of staff needs in order to decide whether to ring the
+ * guest back: who, how many, when, and the number to call. The full detail
+ * stays in the email and the dashboard.
+ */
+function whatsappAlert(
+  kind: "REQUEST" | "CHANGED",
+  d: { name: string; partySize: number; date: string; time: string; phone: string },
+  id: string,
+): BookingAlert {
+  return {
+    kind,
+    name: d.name,
+    party: `${d.partySize} ${d.partySize === 1 ? "guest" : "guests"}`,
+    when: `${d.date} at ${d.time}`,
+    phone: d.phone,
+    reference: reference(id),
+  };
 }
 
 export async function createReservation(
@@ -228,6 +254,13 @@ export async function createReservation(
       /* The change is saved and visible in the dashboard; email is a courtesy. */
     }
 
+    // A change matters more than the original: somebody has already planned
+    // around the old number of covers.
+    await notifyOwnerWhatsApp(
+      whatsappAlert("CHANGED", d, existing.id),
+      settings?.reservationsWhatsApp,
+    );
+
     revalidatePath("/admin/reservations");
     return { ok: true, reference: reference(amended.id) };
   }
@@ -271,6 +304,14 @@ export async function createReservation(
   } catch {
     /* booking is saved; a failed notification is not the guest's problem */
   }
+
+  // The same alert on WhatsApp, and the reason this exists: the inbox gets
+  // read between services, the phone gets read during one. notifyOwnerWhatsApp
+  // swallows its own failures, so this needs no try/catch of its own.
+  await notifyOwnerWhatsApp(
+    whatsappAlert("REQUEST", d, created.id),
+    settings?.reservationsWhatsApp,
+  );
 
   revalidatePath("/admin/reservations");
   return { ok: true, reference: reference(created.id) };
