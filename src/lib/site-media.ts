@@ -75,3 +75,25 @@ export async function processSiteVideo(file: File) {
   const stored = await storage.put(buildKey(`site.${extension}`, "site"), bytes, file.type);
   return { url: stored.url };
 }
+
+/** Largest catalogue PDF the dashboard accepts. */
+export const MAX_CATALOGUE_MB = 20;
+
+/**
+ * Stores the downloadable catering catalogue. Checked by its first bytes as
+ * well as its declared type, so a renamed file of another kind is refused.
+ */
+export async function processCatalogue(file: File) {
+  if (file.size > MAX_CATALOGUE_MB * 1024 * 1024) {
+    throw new Error(
+      `That PDF is ${(file.size / 1024 / 1024).toFixed(1)} MB — the limit is ${MAX_CATALOGUE_MB} MB.`,
+    );
+  }
+  const bytes = Buffer.from(await file.arrayBuffer());
+  if (bytes.subarray(0, 5).toString("latin1") !== "%PDF-") {
+    throw new Error("The catalogue must be a PDF file.");
+  }
+  const storage = await getStorage();
+  const stored = await storage.put(buildKey("catalogue.pdf", "site"), bytes, "application/pdf");
+  return { url: stored.url };
+}

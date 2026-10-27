@@ -623,3 +623,115 @@ model PageView {
   @@unique([path, date])
   @@index([date])
 }
+
+// ------------------------------------------------------------
+//  CATERING PAGE
+//  /business — corporate events, hospitality supply and supermarkets.
+//  Every word and photograph on the page lives here so the café can
+//  change it from the dashboard without a deploy. The migration seeds
+//  the original copy, so the page looks right the moment it ships.
+// ------------------------------------------------------------
+
+/// The page's own wording, photographs and sizing. One row, like SiteSettings.
+model CateringPage {
+  id String @id @default("singleton")
+
+  /// Off hides the page and its link in the navigation.
+  enabled     Boolean @default(true)
+  /// The page's name in the menu bar, footer and browser tab.
+  navLabel    String  @default("For Business")
+  /// "sm" | "md" | "lg" | "xl" — every section heading on the page.
+  headingSize String  @default("lg")
+  /// "sm" | "md" | "lg" — padding and type on the cards.
+  cardSize    String  @default("md")
+
+  heroEyebrow        String  @default("Catering")
+  heroHeading        String  @default("Daar, wherever you gather")
+  heroBody           String  @default("")
+  heroPrimaryLabel   String  @default("Start an enquiry")
+  heroSecondaryLabel String  @default("Explore")
+  heroImageUrl       String?
+  heroImageAlt       String?
+
+  corporateEnabled        Boolean @default(true)
+  /// Name on the strip of tabs under the opening.
+  corporateNavLabel       String  @default("Corporate")
+  corporateEyebrow        String  @default("Corporate")
+  corporateHeading        String  @default("")
+  corporateBody           String  @default("")
+  corporatePrimaryLabel   String  @default("Request a quote")
+  corporateSecondaryLabel String  @default("Download the catalogue")
+  /// A line under the cards, e.g. how events are priced.
+  corporateNote           String  @default("")
+  /// Uploaded PDF, or any link. Blank hides the catalogue button.
+  catalogueUrl            String?
+
+  hospitalityEnabled     Boolean @default(true)
+  hospitalityNavLabel    String  @default("Hospitality")
+  hospitalityEyebrow     String  @default("Hospitality")
+  hospitalityHeading     String  @default("")
+  hospitalityBody        String  @default("")
+  /// One per line — the small pills under the copy.
+  hospitalityTags        String  @default("")
+  hospitalityImageUrl    String?
+  hospitalityImageAlt    String?
+  stepsHeading           String  @default("")
+  hospitalityButtonLabel String  @default("Book a tasting")
+
+  supermarketEnabled     Boolean @default(true)
+  supermarketNavLabel    String  @default("Supermarkets")
+  supermarketEyebrow     String  @default("Supermarkets")
+  supermarketHeading     String  @default("")
+  supermarketBody        String  @default("")
+  supermarketButtonLabel String  @default("Become a stockist")
+  /// Optional wide photo under the Supermarkets heading.
+  supermarketImageUrl    String?
+  supermarketImageAlt    String?
+
+  quoteEnabled Boolean @default(false)
+  quoteText    String  @default("")
+  quoteName    String  @default("")
+
+  enquiryEyebrow     String @default("Enquire")
+  enquiryHeading     String @default("")
+  enquiryBody        String @default("")
+  /// The question above the choice cards on the form.
+  enquiryQuestion    String @default("What can we help you with?")
+  /// One choice per line, as "Title | short explanation".
+  enquiryInterests   String @default("")
+  enquiryButtonLabel String @default("Send enquiry")
+
+  updatedAt DateTime @updatedAt
+}
+
+/// A card, step or option on the Catering page. `section` says which list
+/// it belongs to:
+///   "offer"  — the Corporate cards (photo, title, comment, price lines)
+///   "step"   — "From first tasting to your own menu" (numbered for you)
+///   "point"  — the three Supermarkets reasons
+///   "option" — Option A / Option B under Supermarkets
+model CateringItem {
+  id      String @id @default(cuid())
+  section String
+
+  /// Small label above the title, e.g. "Option A".
+  eyebrow String @default("")
+  title   String
+  body    String @default("")
+  /// Offer cards only: what's included, one bullet per line.
+  details String @default("")
+
+  imageUrl    String?
+  imageAlt    String?
+  blurDataUrl String?
+
+  /// Draws the card with a gold border — the recommended option.
+  highlight Boolean @default(false)
+
+  displayOrder Int      @default(0)
+  isVisible    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([section, displayOrder])
+}

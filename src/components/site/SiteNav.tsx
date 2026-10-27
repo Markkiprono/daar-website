@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { BrandMark } from "./BrandMark";
 import type { ResolvedLogo } from "@/lib/logo";
 
-const LINKS = [
+const BASE_LINKS = [
   { href: "/", label: "Home" },
   { href: "/menu", label: "Menu" },
   { href: "/story", label: "Story" },
@@ -25,12 +25,19 @@ const LINKS = [
 export function SiteNav({
   solid = false,
   wordmark,
+  business = null,
 }: {
   solid?: boolean;
+  /** The For Business link's wording, or null while that page is off. */
+  business?: string | null;
   /** The "DAAR by izzi" lettering. The header shows this alone. */
   wordmark?: ResolvedLogo;
 }) {
   const pathname = usePathname();
+  // The business page sits before Visit, under whatever name the café gave it.
+  const LINKS = business
+    ? [...BASE_LINKS.slice(0, 3), { href: "/business", label: business }, ...BASE_LINKS.slice(3)]
+    : BASE_LINKS;
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 

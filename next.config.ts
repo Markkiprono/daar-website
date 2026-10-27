@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
    */
   output: "standalone",
 
+  /** The For Business page was briefly called Catering; keep old links working. */
+  async redirects() {
+    return [{ source: "/catering", destination: "/business", permanent: true }];
+  },
+
   /**
    * The dev server binds to localhost, and Next blocks cross-origin requests to
    * dev-only assets. The admin dashboard runs on its own host, so without this
