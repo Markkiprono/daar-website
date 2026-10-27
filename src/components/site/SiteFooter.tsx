@@ -5,6 +5,7 @@ import { getLogo } from "@/lib/logo";
 import { getSettings } from "@/lib/menu";
 import { readSocials } from "@/lib/socials";
 import { SITE } from "@/lib/config";
+import { businessNavLabel } from "@/lib/catering";
 
 export async function SiteFooter({ email, phone }: { email?: string | null; phone?: string | null }) {
   // The designer's single stacked lockup — mark and lettering already spaced
@@ -16,11 +17,12 @@ export async function SiteFooter({ email, phone }: { email?: string | null; phon
   // the links were in the dashboard and in the database for months, and the
   // only page that ever showed them was Visit. getSettings is React-cached per
   // request, so reading it here costs no extra query on any page.
-  const [lockup, mark, full, settings] = await Promise.all([
+  const [lockup, mark, full, settings, business] = await Promise.all([
     getLogo("lockup"),
     getLogo("mark"),
     getLogo("full"),
     getSettings(),
+    businessNavLabel(),
   ]);
 
   const socials = readSocials(settings?.socials);
@@ -29,6 +31,7 @@ export async function SiteFooter({ email, phone }: { email?: string | null; phon
     { href: "/", label: "Home" },
     { href: "/menu", label: "Menu" },
     { href: "/story", label: "Story" },
+    ...(business ? [{ href: "/business", label: business }] : []),
     { href: "/visit", label: "Visit" },
   ];
 

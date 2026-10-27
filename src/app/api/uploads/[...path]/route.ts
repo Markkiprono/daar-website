@@ -26,6 +26,7 @@ const CONTENT_TYPES: Record<string, string> = {
   svg: "image/svg+xml",
   mp4: "video/mp4",
   webm: "video/webm",
+  pdf: "application/pdf",
 };
 
 /** Extensions a browser will stream rather than download in one go. */
@@ -75,6 +76,9 @@ export async function GET(
     // one executing, and stops a mislabelled file being sniffed as HTML.
     "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
     "X-Content-Type-Options": "nosniff",
+    // The catering catalogue. The sandbox above stops browsers opening a PDF
+    // inline, and the button says "Download" anyway — so save it instead.
+    ...(ext === "pdf" ? { "Content-Disposition": 'attachment; filename="daar-catering-catalogue.pdf"' } : {}),
   };
 
   if (range) {
