@@ -3,6 +3,7 @@ import { Bodoni_Moda, Jost, Montserrat } from "next/font/google";
 import { SITE } from "@/lib/config";
 import { ServiceWorker } from "@/components/site/ServiceWorker";
 import { GoogleTag } from "@/components/site/GoogleTag";
+import { NavProgress } from "@/components/site/NavProgress";
 import { getSettings } from "@/lib/menu";
 import { isVideoUrl } from "@/lib/media";
 import "./globals.css";
@@ -145,6 +146,7 @@ export default function RootLayout({
         />
       </head>
       <body className="flex min-h-full flex-col">
+        <NavProgress />
         {children}
         <ServiceWorker />
         <GoogleTag />
