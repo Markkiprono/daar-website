@@ -38,6 +38,29 @@ import { bakeryJsonLd, jsonLdString } from "@/lib/seo";
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * How many photographs the drifting band shows on one visit.
+ *
+ * The café can upload as many as they like — over sixty at one point — but
+ * every one of them is a download, and the Marquee draws each twice to loop.
+ * Sixty-odd frames meant 120-plus images streaming in while the page was
+ * being read, over a connection that is slow from Kenya, and everything else
+ * on the page (the chef's arch, the next page you tapped) queued behind them.
+ */
+const BAND_LIMIT = 16;
+
+/**
+ * A window of `limit` items that moves along the list once an hour, wrapping
+ * at the end. Every photograph still gets its turn through the day, and each
+ * visit downloads only the window.
+ */
+function rotateWindow<T>(list: T[], limit: number): T[] {
+  if (list.length <= limit) return list;
+  const hour = Math.floor(Date.now() / 3_600_000);
+  const start = (hour * limit) % list.length;
+  return Array.from({ length: limit }, (_, i) => list[(start + i) % list.length]!);
+}
+
 export default async function HomePage() {
   const [featured, settings, hours, gallery, chosen, bandItems, valueCards, homePanels] =
     await Promise.all([
@@ -115,7 +138,7 @@ export default async function HomePage() {
    * draw is neither. Nothing chosen leaves the self-filling version, which
    * is all the built-in photographs are still for. */
   const picked = [...uploaded, ...ticked];
-  const strip: Frame[] = picked.length > 0 ? picked : [...plates, ...ROOM];
+  const strip: Frame[] = rotateWindow(picked.length > 0 ? picked : [...plates, ...ROOM], BAND_LIMIT);
 
   /* Alternating, so the two bands read as one strip cut in half rather than
      as the first half above the second. Below two photographs the split
