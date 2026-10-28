@@ -114,6 +114,7 @@ const GROUPS = {
       enquiryHeading: 120,
       enquiryBody: 600,
       enquiryQuestion: 120,
+      enquiryNote: 400,
       enquiryInterests: 1000,
       enquiryButtonLabel: 40,
     },
@@ -352,14 +353,20 @@ export async function moveCateringItem(formData: FormData) {
 
 const MIN_SECONDS_ON_FORM = 3;
 
+// Every field is asked for, and the wording stays as gentle as the form's.
 const EnquirySchema = z.object({
-  name: z.string().trim().min(2, "Please enter your name").max(80),
-  company: text(120),
-  email: z.string().trim().min(1, "Please enter your email").email("That email doesn't look right").max(120),
-  phone: text(30),
+  name: z.string().trim().min(2, "Kindly let us know your name.").max(80),
+  company: z.string().trim().min(1, "Kindly add your company or organisation.").max(120),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Kindly add an email address we can reply to.")
+    .email("That email address doesn't look quite right — would you mind checking it?")
+    .max(120),
+  phone: z.string().trim().min(7, "Kindly add a phone number, in case a quick call is easier.").max(30),
   interest: text(120),
-  when: text(120),
-  details: text(2000),
+  when: z.string().trim().min(1, "Kindly add a date and rough numbers. An estimate is perfectly fine.").max(120),
+  details: z.string().trim().min(3, "Kindly share a sentence or two about what you have in mind.").max(2000),
 });
 
 export type EnquiryState = { ok: true } | { ok: false; error: string } | undefined;
@@ -372,7 +379,7 @@ export async function sendCateringEnquiry(
 
   const startedAt = Number(formData.get("startedAt"));
   if (Number.isFinite(startedAt) && startedAt > 0 && (Date.now() - startedAt) / 1000 < MIN_SECONDS_ON_FORM) {
-    return { ok: false, error: "That was too quick — please try again." };
+    return { ok: false, error: "Sorry, that was a little too quick for us. Would you mind sending it again?" };
   }
 
   const parsed = EnquirySchema.safeParse({
@@ -391,9 +398,12 @@ export async function sendCateringEnquiry(
 
   // Only accept an interest the page actually offers.
   const page = await db.cateringPage.findUnique({ where: { id: "singleton" } }).catch(() => null);
-  const interest = interestChoices(page?.enquiryInterests).some((c) => c.title === d.interest)
-    ? d.interest
-    : "";
+  const choices = interestChoices(page?.enquiryInterests);
+  const interest = choices.some((c) => c.title === d.interest) ? d.interest : "";
+  // A choice is needed only while the form offers some.
+  if (choices.length > 0 && !interest) {
+    return { ok: false, error: "Kindly choose the option closest to what you need." };
+  }
 
   const subject = `Business enquiry${interest ? ` — ${interest}` : ""}`;
   const facts = [

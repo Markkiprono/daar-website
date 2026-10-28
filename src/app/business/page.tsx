@@ -526,6 +526,7 @@ export default async function BusinessPage() {
               <div className="rounded-[6px] border border-white/[0.07] bg-[#1b1917] p-5 sm:p-8">
                 <CateringEnquiryForm
                   question={page.enquiryQuestion}
+                  note={page.enquiryNote}
                   interests={interests}
                   buttonLabel={page.enquiryButtonLabel}
                 />

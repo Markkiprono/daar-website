@@ -284,6 +284,14 @@ export default async function CateringAdminPage() {
             heading("enquiryHeading", v("enquiryHeading")),
             comment("enquiryBody", v("enquiryBody")),
             {
+              name: "enquiryNote",
+              label: "Note under the question",
+              kind: "textarea",
+              value: v("enquiryNote"),
+              max: 400,
+              hint: "Every field on the form is required; this line gently explains why. Leave empty to hide it.",
+            },
+            {
               name: "enquiryQuestion",
               label: "Question above the choices",
               kind: "input",

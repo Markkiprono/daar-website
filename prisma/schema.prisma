@@ -697,6 +697,8 @@ model CateringPage {
   enquiryBody        String @default("")
   /// The question above the choice cards on the form.
   enquiryQuestion    String @default("What can we help you with?")
+  /// A gentle line under the question, asking for every detail.
+  enquiryNote        String @default("We kindly ask for each detail below. It helps us come back to you with something that truly fits, and saves you a second round of questions. Thank you for taking a moment.")
   /// One choice per line, as "Title | short explanation".
   enquiryInterests   String @default("")
   enquiryButtonLabel String @default("Send enquiry")
